@@ -4,6 +4,8 @@ import { ThemeProvider, useTheme, type ThemeName } from './context/ThemeContext'
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ExerciseProvider } from './context/ExerciseContext';
 import { WorkoutProvider } from './context/WorkoutContext';
+import { ProfileProvider } from './context/ProfileContext';
+import { ActiveSessionProvider } from './context/ActiveSessionContext';
 import LoginPage from './pages/LoginPage';
 import ExercisesPage from './pages/ExercisesPage';
 import AddExercisePage from './pages/AddExercisePage';
@@ -11,6 +13,9 @@ import WorkoutsPage from './pages/WorkoutsPage';
 import WorkoutBuilderPage from './pages/WorkoutBuilderPage';
 import WorkoutPlayerPage from './pages/WorkoutPlayerPage';
 import SquadPage from './pages/MorePage';
+import ProfilePage from './pages/ProfilePage';
+import AchievementsPage from './pages/AchievementsPage';
+import MeasurementsPage from './pages/MeasurementsPage';
 
 const THEME_LIST: ThemeName[] = ['dark', 'light', 'kelly', 'navy'];
 
@@ -96,60 +101,76 @@ function AppShell() {
 
   const isFullScreen = location.pathname.startsWith('/workouts/play/') ||
     location.pathname === '/exercises/new' ||
-    location.pathname === '/workouts/new';
+    location.pathname.startsWith('/exercises/edit/') ||
+    location.pathname === '/workouts/new' ||
+    location.pathname === '/profile' ||
+    location.pathname === '/achievements' ||
+    location.pathname === '/measurements';
 
   if (location.pathname.startsWith('/workouts/play/')) {
     return (
-      <ExerciseProvider>
-        <WorkoutProvider>
-          <div className="app-shell">
-            <div className="main-content">
-              <Routes>
-                <Route path="/workouts/play/:workoutId" element={<WorkoutPlayerPage />} />
-              </Routes>
-            </div>
-          </div>
-          {toast.msg && <Toast message={toast.msg} onDone={toast.clear} />}
-        </WorkoutProvider>
-      </ExerciseProvider>
+      <ProfileProvider>
+        <ActiveSessionProvider>
+          <ExerciseProvider>
+            <WorkoutProvider>
+              <div className="app-shell">
+                <div className="main-content">
+                  <Routes>
+                    <Route path="/workouts/play/:workoutId" element={<WorkoutPlayerPage />} />
+                  </Routes>
+                </div>
+              </div>
+              {toast.msg && <Toast message={toast.msg} onDone={toast.clear} />}
+            </WorkoutProvider>
+          </ExerciseProvider>
+        </ActiveSessionProvider>
+      </ProfileProvider>
     );
   }
 
   return (
-    <ExerciseProvider>
-      <WorkoutProvider>
-        <div className="app-shell">
-          {!isFullScreen && <ThemeSwitcher />}
-          <div className="main-content">
-            <Routes>
-              <Route path="/exercises" element={<ExercisesPage toast={toast} />} />
-              <Route path="/exercises/new" element={<AddExercisePage toast={toast} />} />
-              <Route path="/workouts" element={<WorkoutsPage />} />
-              <Route path="/workouts/new" element={<WorkoutBuilderPage toast={toast} />} />
-              <Route path="/squad" element={<SquadPage />} />
-              <Route path="*" element={<Navigate to="/exercises" replace />} />
-            </Routes>
-          </div>
-          {!isFullScreen && (
-            <nav className="tab-bar">
-              <NavLink to="/exercises" className={({ isActive }) => `tab-bar-link ${isActive ? 'active' : ''}`}>
-                <DrillsIcon />
-                Drills
-              </NavLink>
-              <NavLink to="/workouts" className={({ isActive }) => `tab-bar-link ${isActive ? 'active' : ''}`}>
-                <SessionsIcon />
-                Sessions
-              </NavLink>
-              <NavLink to="/squad" className={({ isActive }) => `tab-bar-link ${isActive ? 'active' : ''}`}>
-                <SquadIcon />
-                Squad
-              </NavLink>
-            </nav>
-          )}
-        </div>
-        {toast.msg && <Toast message={toast.msg} onDone={toast.clear} />}
-      </WorkoutProvider>
-    </ExerciseProvider>
+    <ProfileProvider>
+      <ActiveSessionProvider>
+        <ExerciseProvider>
+          <WorkoutProvider>
+            <div className="app-shell">
+              {!isFullScreen && <ThemeSwitcher />}
+              <div className="main-content">
+                <Routes>
+                  <Route path="/exercises" element={<ExercisesPage toast={toast} />} />
+                  <Route path="/exercises/new" element={<AddExercisePage toast={toast} />} />
+                  <Route path="/exercises/edit/:exerciseId" element={<AddExercisePage toast={toast} />} />
+                  <Route path="/workouts" element={<WorkoutsPage />} />
+                  <Route path="/workouts/new" element={<WorkoutBuilderPage toast={toast} />} />
+                  <Route path="/squad" element={<SquadPage />} />
+                  <Route path="/profile" element={<ProfilePage />} />
+                  <Route path="/achievements" element={<AchievementsPage />} />
+                  <Route path="/measurements" element={<MeasurementsPage />} />
+                  <Route path="*" element={<Navigate to="/exercises" replace />} />
+                </Routes>
+              </div>
+              {!isFullScreen && (
+                <nav className="tab-bar">
+                  <NavLink to="/exercises" className={({ isActive }) => `tab-bar-link ${isActive ? 'active' : ''}`}>
+                    <DrillsIcon />
+                    Drills
+                  </NavLink>
+                  <NavLink to="/workouts" className={({ isActive }) => `tab-bar-link ${isActive ? 'active' : ''}`}>
+                    <SessionsIcon />
+                    Sessions
+                  </NavLink>
+                  <NavLink to="/squad" className={({ isActive }) => `tab-bar-link ${isActive ? 'active' : ''}`}>
+                    <SquadIcon />
+                    Squad
+                  </NavLink>
+                </nav>
+              )}
+            </div>
+            {toast.msg && <Toast message={toast.msg} onDone={toast.clear} />}
+          </WorkoutProvider>
+        </ExerciseProvider>
+      </ActiveSessionProvider>
+    </ProfileProvider>
   );
 }
 

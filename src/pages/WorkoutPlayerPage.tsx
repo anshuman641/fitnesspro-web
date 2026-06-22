@@ -3,6 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import { useWorkouts } from '../context/WorkoutContext';
 import { useExercises } from '../context/ExerciseContext';
+import { useActiveSession } from '../context/ActiveSessionContext';
+import { useProfile } from '../context/ProfileContext';
+import { useWorkoutAudio } from '../hooks/useWorkoutAudio';
 import type { WorkoutItem, DurationSet } from '../types';
 
 const RING_SIZE = 208;
@@ -36,6 +39,10 @@ export default function WorkoutPlayerPage() {
   const allEx = [...exercises, ...publicExercises];
   const exById = (id: string) => allEx.find(e => e.id === id);
 
+  const { setActive, confirmLeave } = useActiveSession();
+  const { recordWorkoutCompletion } = useProfile();
+  const { playWork, playRest, stopAll } = useWorkoutAudio();
+
   const workout = workouts.find(w => w.id === workoutId);
   const items = workout?.items ?? [];
 
@@ -47,6 +54,21 @@ export default function WorkoutPlayerPage() {
   const [done, setDone] = useState(false);
   const [totalElapsed, setTotalElapsed] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    setActive(true);
+    return () => { setActive(false); stopAll(); };
+  }, [setActive, stopAll]);
+
+  useEffect(() => {
+    if (done || paused) return;
+    if (phase === 'work') playWork();
+    else playRest();
+  }, [phase, done, paused, playWork, playRest]);
+
+  useEffect(() => {
+    if (paused) stopAll();
+  }, [paused, stopAll]);
 
   const startPhase = useCallback((i: number, p: Phase) => {
     const dur = p === 'rest' ? REST_DEFAULT : (items[i] ? exTime(items[i]) : 30);
@@ -114,12 +136,27 @@ export default function WorkoutPlayerPage() {
     startPhase(0, 'work');
   };
 
-  const handleClose = () => navigate('/workouts');
+  const handleClose = () => {
+    confirmLeave(() => {
+      stopAll();
+      navigate('/workouts');
+    });
+  };
 
   const addRest = () => {
     setRemaining(r => r + 15);
     setTotalTime(tt => tt + 15);
   };
+
+  const completionRecorded = useRef(false);
+  useEffect(() => {
+    if (done && !completionRecorded.current) {
+      completionRecorded.current = true;
+      stopAll();
+      setActive(false);
+      recordWorkoutCompletion(totalElapsed);
+    }
+  }, [done, totalElapsed, stopAll, setActive, recordWorkoutCompletion]);
 
   if (done) {
     const totalMin = Math.max(1, Math.round(totalElapsed / 60));
