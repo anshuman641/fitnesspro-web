@@ -12,7 +12,7 @@ const SORT_OPTIONS = [
 
 const DIFF_ORDER: Record<string, number> = { Beginner: 0, Intermediate: 1, Advanced: 2 };
 
-export default function ExercisesPage() {
+export default function ExercisesPage({ toast }: { toast?: { show: (m: string) => void } }) {
   const { t } = useTheme();
   const { exercises, publicExercises, allTags } = useExercises();
   const navigate = useNavigate();
@@ -46,26 +46,31 @@ export default function ExercisesPage() {
   };
 
   return (
-    <div className="page">
-      <div className="page-header">
-        <h1 className="page-title">Exercises</h1>
-        <button className="btn-icon" onClick={() => navigate('/exercises/new')}>+</button>
-      </div>
-      <div className="page-count">{filtered.length} {filtered.length === 1 ? 'exercise' : 'exercises'}</div>
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ flexShrink: 0, padding: '54px 22px 0' }}>
+        <div className="page-eyebrow">// Train</div>
+        <div className="page-header">
+          <h1 className="page-title">Drills</h1>
+          <button className="btn-accent" onClick={() => navigate('/exercises/new')}>
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round"><path d="M11 5v12M5 11h12" /></svg>
+          </button>
+        </div>
+        <div className="page-count">{filtered.length} movements</div>
 
-      <div className="search-box">
-        <span className="search-icon">🔍</span>
-        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search exercises or tags" />
+        <div className="search-box">
+          <svg width="17" height="17" viewBox="0 0 18 18" fill="none" stroke={t.sub} strokeWidth="2" strokeLinecap="round"><circle cx="8" cy="8" r="6" /><path d="M16 16l-3.6-3.6" /></svg>
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="SEARCH DRILLS OR TAGS" />
+        </div>
       </div>
 
-      <div className="chip-row">
+      <div className="chip-row" style={{ padding: '16px 22px 4px', flexShrink: 0 }}>
         <button className={`chip ${selectedTags.length === 0 ? 'active' : ''}`} onClick={() => setSelectedTags([])}>All</button>
         {allTags.map(tag => (
           <button key={tag} className={`chip ${selectedTags.includes(tag) ? 'active' : ''}`} onClick={() => toggleTag(tag)}>{tag}</button>
         ))}
       </div>
 
-      <div className="sort-row">
+      <div className="sort-row" style={{ padding: '12px 22px 4px', flexShrink: 0 }}>
         <span className="sort-label">Sort</span>
         <div style={{ display: 'flex', gap: 6 }}>
           {SORT_OPTIONS.map(opt => (
@@ -74,69 +79,81 @@ export default function ExercisesPage() {
         </div>
       </div>
 
-      {sorted.map(ex => (
-        <ExerciseCard key={ex.id} exercise={ex} expanded={expandedId === ex.id} onToggle={() => setExpandedId(expandedId === ex.id ? null : ex.id)} />
-      ))}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '6px 0 26px', scrollbarWidth: 'none' }}>
+        {sorted.map((ex, idx) => (
+          <DrillRow key={ex.id} exercise={ex} index={idx + 1} expanded={expandedId === ex.id} onToggle={() => setExpandedId(expandedId === ex.id ? null : ex.id)} />
+        ))}
+        <div style={{ borderTop: `1px solid ${t.line}` }} />
 
-      {sorted.length === 0 && (
-        <div className="empty-state">
-          <h3>No exercises found</h3>
-          <p>Try a different search or tag.</p>
-          <button className="btn-primary" onClick={() => { setSearch(''); setSelectedTags([]); }}>Clear filters</button>
-        </div>
-      )}
+        {sorted.length === 0 && (
+          <div className="empty-state">
+            <h3>No drills found</h3>
+            <p>Try another search or tag</p>
+            <button onClick={() => { setSearch(''); setSelectedTags([]); }} style={{
+              border: `1px solid ${t.line}`, background: 'transparent', color: t.ink,
+              fontWeight: 800, fontSize: 11, letterSpacing: '.12em', textTransform: 'uppercase',
+              padding: '12px 20px', borderRadius: 3, cursor: 'pointer',
+            }}>Clear filters</button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
 
-function ExerciseCard({ exercise: ex, expanded, onToggle }: { exercise: Exercise; expanded: boolean; onToggle: () => void }) {
+function DrillRow({ exercise: ex, index, expanded, onToggle }: { exercise: Exercise; index: number; expanded: boolean; onToggle: () => void }) {
   const { t } = useTheme();
 
   return (
-    <div className="card">
+    <div style={{ borderTop: `1px solid ${t.line}` }}>
       <button onClick={onToggle} style={{
-        display: 'flex', alignItems: 'center', gap: 13, padding: 14, width: '100%',
-        background: 'none', cursor: 'pointer', textAlign: 'left',
+        width: '100%', display: 'flex', alignItems: 'center', gap: 15, padding: '16px 22px',
+        background: 'none', cursor: 'pointer', textAlign: 'left', border: 'none',
       }}>
-        <div className="monogram">{ex.title[0]}</div>
+        <div style={{ fontFamily: "'Anton', sans-serif", fontSize: 23, color: t.sub, opacity: 0.45, width: 30, flexShrink: 0 }}>{index}</div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontFamily: 'Fredoka', fontWeight: 500, fontSize: 17, color: t.ink }}>{ex.title}</div>
-          <div style={{ fontSize: 12.5, fontWeight: 600, color: t.sub, marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <div style={{ fontFamily: "'Anton', sans-serif", fontSize: 21, lineHeight: 1, letterSpacing: '.02em', textTransform: 'uppercase', color: t.ink }}>{ex.title}</div>
+          <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.12em', textTransform: 'uppercase', color: t.sub, marginTop: 6, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {ex.difficulty} · {ex.tags.join(', ') || 'No tags'}
           </div>
         </div>
-        <span style={{ color: t.sub, fontSize: 14, transition: 'transform 0.2s', transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
+        <span style={{ color: t.sub, transition: 'transform .2s', transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)', display: 'flex' }}>
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M5 3l5 4-5 4" /></svg>
+        </span>
       </button>
 
       {expanded && (
-        <div style={{ padding: '0 14px 16px' }}>
+        <div style={{ padding: '0 22px 20px' }}>
           <div style={{
-            height: 148, borderRadius: 16, border: `1.5px dashed ${t.line}`, background: t.chip,
-            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 14,
+            height: 150, border: `1px dashed ${t.line}`,
+            background: `repeating-linear-gradient(45deg, ${t.chip} 0 11px, transparent 11px 22px)`,
+            borderRadius: 3, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 18,
           }}>
-            <span style={{ fontWeight: 800, fontSize: 13, color: t.sub }}>{ex.mediaType === 'video' ? 'Exercise demo video' : 'Exercise photo'}</span>
-            <span style={{ fontFamily: 'monospace', fontSize: 11, color: t.sub, opacity: 0.7 }}>drop image / video</span>
+            <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.16em', textTransform: 'uppercase', color: t.sub }}>
+              {ex.mediaType === 'video' ? 'Exercise demo video' : 'Exercise photo'}
+            </div>
+            <div style={{ fontFamily: 'ui-monospace, monospace', fontSize: 11, color: t.sub, opacity: 0.7 }}>drop image / video</div>
           </div>
 
-          <div className="section-label">Steps</div>
+          <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.2em', textTransform: 'uppercase', color: t.accent, marginBottom: 12 }}>Execution</div>
           {ex.steps.map((step, i) => (
-            <div key={step.id} style={{ display: 'flex', gap: 11, marginBottom: 9 }}>
+            <div key={step.id} style={{ display: 'flex', gap: 13, marginBottom: 12 }}>
               <div style={{
-                width: 22, height: 22, borderRadius: 8, background: t.accentSoft,
+                width: 24, height: 24, flexShrink: 0, border: `1px solid ${t.line}`, color: t.ink,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontFamily: 'Fredoka', fontWeight: 600, fontSize: 12, color: t.accent, flexShrink: 0,
+                fontFamily: "'Anton', sans-serif", fontSize: 13, borderRadius: 2,
               }}>{i + 1}</div>
-              <span style={{ fontSize: 14, fontWeight: 600, lineHeight: '20px', color: t.ink }}>{step.description}</span>
+              <div style={{ fontSize: 13.5, fontWeight: 500, lineHeight: 1.5, color: t.ink, opacity: 0.9 }}>{step.description}</div>
             </div>
           ))}
 
           {ex.tips.length > 0 && (
             <>
-              <div className="section-label" style={{ color: t.accent, marginTop: 14 }}>Tips</div>
+              <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.2em', textTransform: 'uppercase', color: t.accent, margin: '18px 0 10px' }}>Cues</div>
               {ex.tips.map((tip, i) => (
-                <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 7, alignItems: 'flex-start' }}>
-                  <div style={{ width: 7, height: 7, borderRadius: 99, background: t.accent, marginTop: 6, flexShrink: 0 }} />
-                  <span style={{ fontSize: 13.5, fontWeight: 600, lineHeight: '20px', color: t.ink }}>{tip}</span>
+                <div key={i} style={{ display: 'flex', gap: 11, marginBottom: 8, alignItems: 'flex-start' }}>
+                  <span style={{ width: 8, height: 8, background: t.accent, marginTop: 6, flexShrink: 0 }} />
+                  <div style={{ fontSize: 13, fontWeight: 500, lineHeight: 1.45, color: t.ink, opacity: 0.88 }}>{tip}</div>
                 </div>
               ))}
             </>
@@ -144,11 +161,11 @@ function ExerciseCard({ exercise: ex, expanded, onToggle }: { exercise: Exercise
 
           {ex.donts.length > 0 && (
             <>
-              <div className="section-label" style={{ color: t.danger, marginTop: 14 }}>Avoid</div>
+              <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.2em', textTransform: 'uppercase', color: t.danger, margin: '18px 0 10px' }}>No-Go</div>
               {ex.donts.map((d, i) => (
-                <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 7, alignItems: 'flex-start' }}>
-                  <div style={{ width: 7, height: 7, borderRadius: 99, background: t.danger, marginTop: 6, flexShrink: 0 }} />
-                  <span style={{ fontSize: 13.5, fontWeight: 600, lineHeight: '20px', color: t.ink }}>{d}</span>
+                <div key={i} style={{ display: 'flex', gap: 11, marginBottom: 8, alignItems: 'flex-start' }}>
+                  <span style={{ width: 8, height: 8, background: t.danger, marginTop: 6, flexShrink: 0 }} />
+                  <div style={{ fontSize: 13, fontWeight: 500, lineHeight: 1.45, color: t.ink, opacity: 0.88 }}>{d}</div>
                 </div>
               ))}
             </>

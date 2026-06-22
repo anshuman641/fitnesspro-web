@@ -7,7 +7,7 @@ import type { WorkoutItem, DurationSet } from '../types';
 
 const RING_SIZE = 208;
 const RING_R = 92;
-const RING_STROKE = 12;
+const RING_STROKE = 10;
 const CIRCUMFERENCE = 2 * Math.PI * RING_R;
 const REST_DEFAULT = 15;
 
@@ -86,8 +86,8 @@ export default function WorkoutPlayerPage() {
   if (!workout) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', background: t.bg }}>
-        <span style={{ color: t.ink, fontSize: 16 }}>Workout not found</span>
-        <button onClick={() => navigate('/workouts')} style={{ marginTop: 20, background: 'none', color: t.accent, fontWeight: 700, cursor: 'pointer' }}>Go back</button>
+        <span style={{ fontFamily: "'Anton', sans-serif", fontSize: 18, textTransform: 'uppercase', color: t.ink }}>Session not found</span>
+        <button onClick={() => navigate('/workouts')} style={{ marginTop: 20, background: 'none', color: t.accent, fontWeight: 800, fontSize: 11, letterSpacing: '.12em', textTransform: 'uppercase', cursor: 'pointer' }}>Go back</button>
       </div>
     );
   }
@@ -121,33 +121,31 @@ export default function WorkoutPlayerPage() {
     setTotalTime(tt => tt + 15);
   };
 
-  const containerStyle: React.CSSProperties = {
-    display: 'flex', flexDirection: 'column', height: '100vh', background: t.bg,
-  };
-
   if (done) {
     const totalMin = Math.max(1, Math.round(totalElapsed / 60));
     return (
-      <div style={containerStyle}>
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: t.bg }}>
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: 40 }}>
           <div style={{
-            width: 90, height: 90, borderRadius: 45, background: t.accentSoft,
+            width: 88, height: 88, borderRadius: 3, background: t.accentSoft,
             display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20,
           }}>
-            <span style={{ fontSize: 40, color: t.accent }}>✓</span>
+            <svg width="40" height="40" viewBox="0 0 40 40" fill="none" stroke={t.accent} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10 20l7 7 13-17" /></svg>
           </div>
-          <h1 style={{ fontFamily: 'Fredoka', fontWeight: 600, fontSize: 28, color: t.ink }}>Workout complete</h1>
-          <p style={{ fontSize: 14.5, fontWeight: 600, color: t.sub, textAlign: 'center', marginTop: 8 }}>
-            {workout.name} · {items.length} exercises · {totalMin} min
+          <h1 style={{ fontFamily: "'Anton', sans-serif", fontSize: 42, textTransform: 'uppercase', color: t.ink }}>Complete</h1>
+          <p style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.14em', textTransform: 'uppercase', color: t.sub, textAlign: 'center', marginTop: 10 }}>
+            {items.length} drills · {totalMin} min
           </p>
           <div style={{ display: 'flex', gap: 14, marginTop: 36 }}>
             <button onClick={handleRestart} style={{
-              border: `1.5px solid ${t.line}`, borderRadius: 14, padding: '14px 28px',
-              background: 'none', color: t.ink, fontWeight: 800, fontSize: 15, cursor: 'pointer',
-            }}>Restart</button>
+              border: `1px solid ${t.line}`, borderRadius: 3, padding: '14px 28px',
+              background: 'none', color: t.ink, fontWeight: 800, fontSize: 11,
+              letterSpacing: '.12em', textTransform: 'uppercase', cursor: 'pointer',
+            }}>Run again</button>
             <button onClick={handleClose} style={{
-              borderRadius: 14, padding: '14px 28px', background: t.accent,
-              color: t.onAccent, fontWeight: 800, fontSize: 15, cursor: 'pointer',
+              borderRadius: 3, padding: '14px 28px', background: t.accent,
+              color: '#fff', fontWeight: 800, fontSize: 11,
+              letterSpacing: '.12em', textTransform: 'uppercase', cursor: 'pointer', border: 'none',
             }}>Done</button>
           </div>
         </div>
@@ -156,31 +154,33 @@ export default function WorkoutPlayerPage() {
   }
 
   return (
-    <div style={containerStyle}>
-      {/* Top bar */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '16px 20px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: t.bg }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '16px 20px', flexShrink: 0 }}>
         <button onClick={handleClose} style={{
-          width: 40, height: 40, borderRadius: 13, border: `1.5px solid ${t.line}`,
-          background: t.surface, color: t.ink, fontSize: 16,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-        }}>✕</button>
+          width: 40, height: 40, borderRadius: 3, border: `1px solid ${t.line}`,
+          background: 'transparent', color: t.ink, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+        }}>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><path d="M4 4l8 8M12 4l-8 8" /></svg>
+        </button>
         <div style={{ flex: 1, textAlign: 'center' }}>
-          <div style={{ fontFamily: 'Fredoka', fontWeight: 500, fontSize: 15, color: t.ink }}>{workout.name}</div>
-          <div style={{ fontSize: 12, fontWeight: 700, color: t.sub }}>
-            {phase === 'rest' ? 'Rest' : `Exercise ${idx + 1} of ${items.length}`}
+          <div style={{ fontFamily: "'Anton', sans-serif", fontSize: 16, textTransform: 'uppercase', color: t.ink }}>{workout.name}</div>
+          <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.14em', textTransform: 'uppercase', color: t.accent }}>
+            Drill {idx + 1} / {items.length}
           </div>
         </div>
         <button onClick={handleRestart} style={{
-          width: 40, height: 40, borderRadius: 13, border: `1.5px solid ${t.line}`,
-          background: t.surface, color: t.ink, fontSize: 14,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-        }}>↺</button>
+          width: 40, height: 40, borderRadius: 3, border: `1px solid ${t.line}`,
+          background: 'transparent', color: t.ink, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+        }}>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 8a6 6 0 1 1 1.8 4.3" /><path d="M2 13V8h5" /></svg>
+        </button>
       </div>
 
       {/* Progress segments */}
-      <div style={{ display: 'flex', gap: 4, padding: '0 20px', marginBottom: 8 }}>
+      <div style={{ display: 'flex', gap: 4, padding: '0 20px', marginBottom: 8, flexShrink: 0 }}>
         {items.map((_, i) => (
-          <div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: i <= idx ? t.accent : t.line }} />
+          <div key={i} style={{ flex: 1, height: 3, borderRadius: 1, background: i <= idx ? t.accent : t.line }} />
         ))}
       </div>
 
@@ -188,7 +188,7 @@ export default function WorkoutPlayerPage() {
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '0 30px' }}>
         {phase === 'rest' ? (
           <>
-            <div style={{ fontSize: 14, fontWeight: 800, letterSpacing: 2, textTransform: 'uppercase', color: t.accent, marginBottom: 16 }}>REST</div>
+            <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.3em', textTransform: 'uppercase', color: t.accent, marginBottom: 16 }}>REST</div>
             <div style={{ position: 'relative', width: RING_SIZE, height: RING_SIZE }}>
               <svg width={RING_SIZE} height={RING_SIZE} viewBox={`0 0 ${RING_SIZE} ${RING_SIZE}`}>
                 <circle cx={RING_SIZE / 2} cy={RING_SIZE / 2} r={RING_R} stroke={t.line} strokeWidth={RING_STROKE} fill="none" />
@@ -197,25 +197,26 @@ export default function WorkoutPlayerPage() {
                   transform={`rotate(-90 ${RING_SIZE / 2} ${RING_SIZE / 2})`} />
               </svg>
               <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                <span style={{ fontFamily: 'Fredoka', fontWeight: 600, fontSize: 52, color: t.ink }}>{fmt(remaining)}</span>
-                <span style={{ fontSize: 13, fontWeight: 700, color: t.sub }}>until next</span>
+                <span style={{ fontFamily: "'Anton', sans-serif", fontSize: 56, color: t.ink }}>{fmt(remaining)}</span>
+                <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.14em', textTransform: 'uppercase', color: t.sub }}>until next</span>
               </div>
             </div>
             <button onClick={addRest} style={{
-              border: `1.5px solid ${t.line}`, borderRadius: 999, padding: '10px 20px',
-              marginTop: 16, color: t.ink, fontWeight: 800, fontSize: 14, background: 'none', cursor: 'pointer',
+              border: `1px solid ${t.line}`, borderRadius: 3, padding: '10px 20px',
+              marginTop: 16, color: t.ink, fontWeight: 800, fontSize: 11,
+              letterSpacing: '.12em', textTransform: 'uppercase', background: 'none', cursor: 'pointer',
             }}>+15 sec</button>
             {nextEx && (
               <div style={{
-                borderRadius: 18, padding: 14, width: '100%', maxWidth: 360, marginTop: 20,
-                background: t.card, boxShadow: 'var(--shadow)',
+                borderRadius: 3, padding: 14, width: '100%', maxWidth: 360, marginTop: 20,
+                background: t.card, border: `1px solid ${t.line}`,
               }}>
-                <div style={{ fontSize: 12, fontWeight: 800, color: t.sub, letterSpacing: 0.5 }}>
-                  NEXT UP · {idx + 2} OF {items.length}
+                <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.14em', textTransform: 'uppercase', color: t.sub }}>
+                  Next up · {idx + 2} of {items.length}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8 }}>
-                  <div className="monogram" style={{ width: 38, height: 38, borderRadius: 12, fontSize: 15 }}>{nextEx.title[0]}</div>
-                  <span style={{ fontFamily: 'Fredoka', fontWeight: 500, fontSize: 15.5, color: t.ink, flex: 1 }}>{nextEx.title}</span>
+                  <div className="monogram monogram-sm">{nextEx.title[0]}</div>
+                  <span style={{ fontFamily: "'Anton', sans-serif", fontSize: 16, textTransform: 'uppercase', color: t.ink, flex: 1 }}>{nextEx.title}</span>
                 </div>
               </div>
             )}
@@ -223,18 +224,19 @@ export default function WorkoutPlayerPage() {
         ) : (
           <>
             <div style={{
-              width: 120, height: 120, borderRadius: 20, border: `1.5px dashed ${t.line}`, background: t.chip,
+              width: 120, height: 120, borderRadius: 3, border: `1px dashed ${t.line}`,
+              background: `repeating-linear-gradient(45deg, ${t.chip} 0 11px, transparent 11px 22px)`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
-              <div className="monogram" style={{ width: 64, height: 64, borderRadius: 20, fontSize: 28 }}>{curEx?.title?.[0] ?? '?'}</div>
+              <div className="monogram" style={{ width: 64, height: 64, fontSize: 28 }}>{curEx?.title?.[0] ?? '?'}</div>
             </div>
-            <h2 style={{ fontFamily: 'Fredoka', fontWeight: 600, fontSize: 26, textAlign: 'center', marginTop: 14, color: t.ink }}>
+            <h2 style={{ fontFamily: "'Anton', sans-serif", fontSize: 30, textAlign: 'center', marginTop: 14, textTransform: 'uppercase', color: t.ink }}>
               {curEx?.title ?? 'Unknown'}
             </h2>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, justifyContent: 'center', marginTop: 8 }}>
               {items[idx]?.sets.map((st, si) => (
-                <div key={si} style={{ padding: '6px 12px', borderRadius: 999, background: t.chip }}>
-                  <span style={{ fontSize: 12.5, fontWeight: 800, color: t.sub }}>
+                <div key={si} style={{ padding: '6px 12px', borderRadius: 2, background: t.chip }}>
+                  <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', color: t.sub }}>
                     {items[idx].mode === 'duration' ? `${(st as DurationSet).sec || '30'} sec` : `${(st as any).reps || '?'} reps${(st as any).kg ? ` · ${(st as any).kg}kg` : ''}`}
                   </span>
                 </div>
@@ -248,35 +250,42 @@ export default function WorkoutPlayerPage() {
                   transform={`rotate(-90 ${RING_SIZE / 2} ${RING_SIZE / 2})`} />
               </svg>
               <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                <span style={{ fontFamily: 'Fredoka', fontWeight: 600, fontSize: 52, color: t.ink }}>{fmt(remaining)}</span>
-                <span style={{ fontSize: 13, fontWeight: 700, color: t.sub }}>remaining</span>
+                <span style={{ fontFamily: "'Anton', sans-serif", fontSize: 56, color: t.ink }}>{fmt(remaining)}</span>
+                <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.14em', textTransform: 'uppercase', color: t.sub }}>remaining</span>
               </div>
             </div>
           </>
         )}
       </div>
 
-      {/* Controls */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 22, padding: '12px 0' }}>
+      {/* Transport controls */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 22, padding: '12px 0', flexShrink: 0 }}>
         <button onClick={handlePrev} disabled={phase === 'work' && idx === 0} style={{
-          width: 52, height: 52, borderRadius: 26, border: `1.5px solid ${t.line}`,
-          background: 'none', color: t.ink, fontSize: 18,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+          width: 54, height: 54, borderRadius: 3, border: `1px solid ${t.line}`,
+          background: 'none', color: t.ink, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
           opacity: phase === 'work' && idx === 0 ? 0.4 : 1,
-        }}>⏮</button>
+        }}>
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor"><rect x="2" y="3" width="3" height="12" /><polygon points="16,3 7,9 16,15" /></svg>
+        </button>
         <button onClick={() => setPaused(p => !p)} style={{
-          width: 74, height: 74, borderRadius: 37, background: t.accent,
-          color: t.onAccent, fontSize: 22,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-        }}>{paused ? '▶' : '⏸'}</button>
+          width: 78, height: 78, borderRadius: 3, background: t.accent,
+          color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: 'none',
+        }}>
+          {paused ? (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><polygon points="6,3 21,12 6,21" /></svg>
+          ) : (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="3" width="5" height="18" /><rect x="14" y="3" width="5" height="18" /></svg>
+          )}
+        </button>
         <button onClick={handleSkip} style={{
-          width: 52, height: 52, borderRadius: 26, border: `1.5px solid ${t.line}`,
-          background: 'none', color: t.ink, fontSize: 18,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-        }}>⏭</button>
+          width: 54, height: 54, borderRadius: 3, border: `1px solid ${t.line}`,
+          background: 'none', color: t.ink, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+        }}>
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor"><polygon points="2,3 11,9 2,15" /><rect x="13" y="3" width="3" height="12" /></svg>
+        </button>
       </div>
-      <p style={{ textAlign: 'center', fontSize: 13, fontWeight: 700, color: t.sub, marginBottom: 20 }}>
-        {phase === 'rest' ? 'Skip rest to start now' : nextEx ? `Up next · ${nextEx.title}` : 'Final exercise'}
+      <p style={{ textAlign: 'center', fontSize: 10, fontWeight: 800, letterSpacing: '.14em', textTransform: 'uppercase', color: t.sub, marginBottom: 20 }}>
+        {phase === 'rest' ? 'Skip rest to start now' : nextEx ? `Next · ${nextEx.title}` : 'Final drill'}
       </p>
     </div>
   );
