@@ -44,4 +44,5 @@ export interface WorkoutPlan {
   items: WorkoutItem[];
   isPublic: boolean;
   userId?: string;
+  restBetween?: number;
 }

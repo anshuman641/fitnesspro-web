@@ -91,7 +91,7 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
       .from('workouts')
       .insert({
         name: workout.name,
-        rest_between: 15,
+        rest_between: workout.restBetween ?? 15,
         is_public: workout.isPublic,
         user_id: user.id,
       })

@@ -23,6 +23,8 @@ export default function WorkoutBuilderPage({ toast }: { toast?: { show: (m: stri
   const [search, setSearch] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [items, setItems] = useState<BuilderItem[]>([]);
+  const [isPublic, setIsPublic] = useState(false);
+  const [restBetween, setRestBetween] = useState(15);
   const [saving, setSaving] = useState(false);
 
   const candidates = useMemo(() => {
@@ -66,7 +68,8 @@ export default function WorkoutBuilderPage({ toast }: { toast?: { show: (m: stri
     await saveWorkout({
       name: wkName.trim(),
       items: items.map(({ exerciseId, mode, sets }) => ({ exerciseId, mode, sets })),
-      isPublic: false,
+      isPublic,
+      restBetween,
     });
     setSaving(false);
     toast?.show('Session saved');
@@ -204,6 +207,31 @@ export default function WorkoutBuilderPage({ toast }: { toast?: { show: (m: stri
             </div>
           );
         })}
+
+        {items.length > 0 && (
+          <>
+            {/* Rest between drills */}
+            <div className="section-label" style={{ marginTop: 22, marginBottom: 9 }}>Rest between drills</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+              <input className="input" style={{ width: 80, textAlign: 'center', padding: '0 8px', height: 38, background: t.bg }}
+                value={restBetween} onChange={e => setRestBetween(Math.max(0, parseInt(e.target.value) || 0))}
+                inputMode="numeric" />
+              <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.1em', textTransform: 'uppercase', color: t.sub }}>Seconds</span>
+            </div>
+
+            {/* Visibility */}
+            <div className="section-label" style={{ marginBottom: 9 }}>Visibility</div>
+            <div className="seg-track" style={{ marginBottom: 6 }}>
+              <button className={`seg-btn ${!isPublic ? 'active' : ''}`} onClick={() => setIsPublic(false)}>Private</button>
+              <button className={`seg-btn ${isPublic ? 'active' : ''}`} onClick={() => setIsPublic(true)}>Public</button>
+            </div>
+            {isPublic && (
+              <div style={{ fontSize: 9, color: t.sub, letterSpacing: '.06em', textTransform: 'uppercase', fontWeight: 700, marginBottom: 10 }}>
+                Public sessions are visible to the entire community
+              </div>
+            )}
+          </>
+        )}
 
         {items.length > 0 && (
           <button onClick={handleSave} disabled={saving} style={{

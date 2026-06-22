@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import { useExercises } from '../context/ExerciseContext';
+import { useAuth } from '../context/AuthContext';
 import type { Exercise } from '../types';
 
 const SORT_OPTIONS = [
@@ -14,7 +15,8 @@ const DIFF_ORDER: Record<string, number> = { Beginner: 0, Intermediate: 1, Advan
 
 export default function ExercisesPage({ toast }: { toast?: { show: (m: string) => void } }) {
   const { t } = useTheme();
-  const { exercises, publicExercises, allTags } = useExercises();
+  const { exercises, publicExercises, allTags, deleteExercise } = useExercises();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -43,6 +45,13 @@ export default function ExercisesPage({ toast }: { toast?: { show: (m: string) =
 
   const toggleTag = (tag: string) => {
     setSelectedTags(prev => prev.includes(tag) ? prev.filter(x => x !== tag) : [...prev, tag]);
+  };
+
+  const handleDelete = async (ex: Exercise) => {
+    if (!window.confirm(`Delete "${ex.title}"? This action cannot be undone.`)) return;
+    await deleteExercise(ex.id);
+    toast?.show('Drill deleted');
+    setExpandedId(null);
   };
 
   return (
@@ -81,7 +90,16 @@ export default function ExercisesPage({ toast }: { toast?: { show: (m: string) =
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '6px 0 26px', scrollbarWidth: 'none' }}>
         {sorted.map((ex, idx) => (
-          <DrillRow key={ex.id} exercise={ex} index={idx + 1} expanded={expandedId === ex.id} onToggle={() => setExpandedId(expandedId === ex.id ? null : ex.id)} />
+          <DrillRow
+            key={ex.id}
+            exercise={ex}
+            index={idx + 1}
+            expanded={expandedId === ex.id}
+            onToggle={() => setExpandedId(expandedId === ex.id ? null : ex.id)}
+            isOwn={ex.userId === user?.id}
+            onEdit={() => navigate(`/exercises/edit/${ex.id}`)}
+            onDelete={() => handleDelete(ex)}
+          />
         ))}
         <div style={{ borderTop: `1px solid ${t.line}` }} />
 
@@ -101,7 +119,10 @@ export default function ExercisesPage({ toast }: { toast?: { show: (m: string) =
   );
 }
 
-function DrillRow({ exercise: ex, index, expanded, onToggle }: { exercise: Exercise; index: number; expanded: boolean; onToggle: () => void }) {
+function DrillRow({ exercise: ex, index, expanded, onToggle, isOwn, onEdit, onDelete }: {
+  exercise: Exercise; index: number; expanded: boolean; onToggle: () => void;
+  isOwn: boolean; onEdit: () => void; onDelete: () => void;
+}) {
   const { t } = useTheme();
 
   return (
@@ -113,8 +134,17 @@ function DrillRow({ exercise: ex, index, expanded, onToggle }: { exercise: Exerc
         <div style={{ fontFamily: "'Anton', sans-serif", fontSize: 23, color: t.sub, opacity: 0.45, width: 30, flexShrink: 0 }}>{index}</div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontFamily: "'Anton', sans-serif", fontSize: 21, lineHeight: 1, letterSpacing: '.02em', textTransform: 'uppercase', color: t.ink }}>{ex.title}</div>
-          <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.12em', textTransform: 'uppercase', color: t.sub, marginTop: 6, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {ex.difficulty} · {ex.tags.join(', ') || 'No tags'}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
+            <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.12em', textTransform: 'uppercase', color: t.sub, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {ex.difficulty} · {ex.tags.join(', ') || 'No tags'}
+            </span>
+            {ex.isPublic && !isOwn && (
+              <span style={{
+                fontSize: 8, fontWeight: 800, letterSpacing: '.1em', textTransform: 'uppercase',
+                color: t.accent, border: `1px solid ${t.accent}`, borderRadius: 2,
+                padding: '3px 6px', flexShrink: 0, lineHeight: 1,
+              }}>PUBLIC</span>
+            )}
           </div>
         </div>
         <span style={{ color: t.sub, transition: 'transform .2s', transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)', display: 'flex' }}>
@@ -169,6 +199,22 @@ function DrillRow({ exercise: ex, index, expanded, onToggle }: { exercise: Exerc
                 </div>
               ))}
             </>
+          )}
+
+          {/* Edit & Delete buttons for own drills */}
+          {isOwn && (
+            <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
+              <button onClick={onEdit} style={{
+                flex: 1, padding: '12px 0', borderRadius: 3, fontSize: 10, fontWeight: 800,
+                letterSpacing: '.12em', textTransform: 'uppercase', cursor: 'pointer',
+                background: t.accent, color: t.onAccent, border: 'none',
+              }}>Edit</button>
+              <button onClick={onDelete} style={{
+                padding: '12px 18px', borderRadius: 3, fontSize: 10, fontWeight: 800,
+                letterSpacing: '.12em', textTransform: 'uppercase', cursor: 'pointer',
+                background: 'transparent', color: t.danger, border: `1px solid ${t.danger}`,
+              }}>Delete</button>
+            </div>
           )}
         </div>
       )}

@@ -1,21 +1,45 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import { useExercises } from '../context/ExerciseContext';
+import type { Difficulty } from '../types';
+
+const DIFFICULTIES: Difficulty[] = ['Beginner', 'Intermediate', 'Advanced'];
 
 export default function AddExercisePage({ toast }: { toast?: { show: (m: string) => void } }) {
   const { t } = useTheme();
-  const { allTags, addExercise } = useExercises();
+  const { allTags, addExercise, updateExercise, deleteExercise, exercises } = useExercises();
   const navigate = useNavigate();
+  const { exerciseId } = useParams<{ exerciseId?: string }>();
+  const isEdit = !!exerciseId;
 
   const [name, setName] = useState('');
+  const [difficulty, setDifficulty] = useState<Difficulty>('Beginner');
   const [media, setMedia] = useState<'photo' | 'video'>('photo');
   const [steps, setSteps] = useState(['']);
   const [tips, setTips] = useState(['']);
   const [donts, setDonts] = useState(['']);
   const [tags, setTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState('');
+  const [isPublic, setIsPublic] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  // Pre-fill fields when editing
+  useEffect(() => {
+    if (isEdit && exerciseId) {
+      const ex = exercises.find(e => e.id === exerciseId);
+      if (ex) {
+        setName(ex.title);
+        setDifficulty(ex.difficulty);
+        setMedia(ex.mediaType === 'video' ? 'video' : 'photo');
+        setSteps(ex.steps.length > 0 ? ex.steps.map(s => s.description) : ['']);
+        setTips(ex.tips.length > 0 ? [...ex.tips] : ['']);
+        setDonts(ex.donts.length > 0 ? [...ex.donts] : ['']);
+        setTags([...ex.tags]);
+        setIsPublic(ex.isPublic);
+      }
+    }
+  }, [isEdit, exerciseId, exercises]);
 
   const updateItem = (arr: string[], i: number, v: string, setter: (a: string[]) => void) =>
     setter(arr.map((x, j) => j === i ? v : x));
@@ -30,19 +54,36 @@ export default function AddExercisePage({ toast }: { toast?: { show: (m: string)
   const handleSave = async () => {
     if (!name.trim()) { toast?.show('Name your drill'); return; }
     setSaving(true);
-    await addExercise({
+
+    const payload = {
       title: name.trim(),
       mediaUri: null,
-      mediaType: media === 'photo' ? 'image' : 'video',
-      isPublic: false,
+      mediaType: media === 'photo' ? 'image' as const : 'video' as const,
+      isPublic,
       tags: tags.length > 0 ? tags : ['No Equipment'],
-      difficulty: 'Beginner',
+      difficulty,
       steps: steps.filter(s => s.trim()).map(s => ({ id: '', description: s.trim() })),
       tips: tips.filter(s => s.trim()).map(s => s.trim()),
       donts: donts.filter(s => s.trim()).map(s => s.trim()),
-    });
+    };
+
+    if (isEdit && exerciseId) {
+      await updateExercise({ ...payload, id: exerciseId });
+      toast?.show('Drill updated');
+    } else {
+      await addExercise(payload);
+      toast?.show('Drill saved');
+    }
+
     setSaving(false);
-    toast?.show('Drill saved');
+    navigate('/exercises');
+  };
+
+  const handleDelete = async () => {
+    if (!exerciseId) return;
+    if (!window.confirm('Delete this drill? This action cannot be undone.')) return;
+    await deleteExercise(exerciseId);
+    toast?.show('Drill deleted');
     navigate('/exercises');
   };
 
@@ -53,7 +94,7 @@ export default function AddExercisePage({ toast }: { toast?: { show: (m: string)
         <button className="btn-back" onClick={() => navigate('/exercises')}>
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M13 4l-6 6 6 6" /></svg>
         </button>
-        <div style={{ fontFamily: "'Anton', sans-serif", fontSize: 18, letterSpacing: '.04em', textTransform: 'uppercase', color: t.ink }}>New Drill</div>
+        <div style={{ fontFamily: "'Anton', sans-serif", fontSize: 18, letterSpacing: '.04em', textTransform: 'uppercase', color: t.ink }}>{isEdit ? 'Edit Drill' : 'New Drill'}</div>
         <button className="btn-primary" onClick={handleSave} disabled={saving}>{saving ? '...' : 'Save'}</button>
       </div>
 
@@ -62,6 +103,14 @@ export default function AddExercisePage({ toast }: { toast?: { show: (m: string)
         {/* Name */}
         <div className="section-label" style={{ margin: '2px 0 9px' }}>Name</div>
         <input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Bodyweight Squat" />
+
+        {/* Difficulty */}
+        <div className="section-label" style={{ margin: '22px 0 9px' }}>Difficulty</div>
+        <div className="seg-track" style={{ marginBottom: 12 }}>
+          {DIFFICULTIES.map(d => (
+            <button key={d} className={`seg-btn ${difficulty === d ? 'active' : ''}`} onClick={() => setDifficulty(d)}>{d}</button>
+          ))}
+        </div>
 
         {/* Media */}
         <div className="section-label" style={{ margin: '22px 0 9px' }}>Photo or video</div>
@@ -166,6 +215,18 @@ export default function AddExercisePage({ toast }: { toast?: { show: (m: string)
           Add no-go
         </button>
 
+        {/* Visibility */}
+        <div className="section-label" style={{ margin: '24px 0 9px' }}>Visibility</div>
+        <div className="seg-track" style={{ marginBottom: 6 }}>
+          <button className={`seg-btn ${!isPublic ? 'active' : ''}`} onClick={() => setIsPublic(false)}>Private</button>
+          <button className={`seg-btn ${isPublic ? 'active' : ''}`} onClick={() => setIsPublic(true)}>Public</button>
+        </div>
+        {isPublic && (
+          <div style={{ fontSize: 9, color: t.sub, letterSpacing: '.06em', textTransform: 'uppercase', fontWeight: 700, marginBottom: 4 }}>
+            Public drills are visible to the entire community
+          </div>
+        )}
+
         {/* Tags */}
         <div className="section-label" style={{ margin: '24px 0 10px' }}>Tags</div>
         <div className="chip-row" style={{ padding: '0 0 8px' }}>
@@ -179,6 +240,18 @@ export default function AddExercisePage({ toast }: { toast?: { show: (m: string)
             if (newTag.trim()) { toggleTag(newTag.trim()); setNewTag(''); }
           }}>Add</button>
         </div>
+
+        {/* Delete button (edit mode only) */}
+        {isEdit && (
+          <button onClick={handleDelete} style={{
+            width: '100%', padding: '16px 0', borderRadius: 3, fontSize: 11, fontWeight: 800,
+            letterSpacing: '.12em', textTransform: 'uppercase', marginTop: 28,
+            background: 'transparent', color: t.danger, cursor: 'pointer',
+            border: `1px solid ${t.danger}`,
+          }}>
+            Delete Drill
+          </button>
+        )}
       </div>
     </div>
   );
