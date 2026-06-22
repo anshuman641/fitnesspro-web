@@ -502,7 +502,7 @@ a { text-decoration: none; color: inherit; }
 }
 
 .form-panel {
-  max-width: 640px;
+  max-width: none;
 }
 
 .two-col {
