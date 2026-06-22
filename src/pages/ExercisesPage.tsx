@@ -55,31 +55,29 @@ export default function ExercisesPage({ toast }: { toast?: { show: (m: string) =
   };
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ flexShrink: 0, padding: '54px 22px 0' }}>
-        <div className="page-eyebrow">// Train</div>
-        <div className="page-header">
-          <h1 className="page-title">Drills</h1>
-          <button className="btn-accent" onClick={() => navigate('/exercises/new')}>
-            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round"><path d="M11 5v12M5 11h12" /></svg>
-          </button>
-        </div>
-        <div className="page-count">{filtered.length} movements</div>
+    <div className="page">
+      <div className="page-eyebrow">// Train</div>
+      <div className="page-header">
+        <h1 className="page-title">Drills</h1>
+        <button className="btn-accent" onClick={() => navigate('/exercises/new')}>
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round"><path d="M11 5v12M5 11h12" /></svg>
+        </button>
+      </div>
+      <div className="page-count">{filtered.length} movements</div>
 
-        <div className="search-box">
-          <svg width="17" height="17" viewBox="0 0 18 18" fill="none" stroke={t.sub} strokeWidth="2" strokeLinecap="round"><circle cx="8" cy="8" r="6" /><path d="M16 16l-3.6-3.6" /></svg>
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="SEARCH DRILLS OR TAGS" />
-        </div>
+      <div className="search-box">
+        <svg width="17" height="17" viewBox="0 0 18 18" fill="none" stroke={t.sub} strokeWidth="2" strokeLinecap="round"><circle cx="8" cy="8" r="6" /><path d="M16 16l-3.6-3.6" /></svg>
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="SEARCH DRILLS OR TAGS" />
       </div>
 
-      <div className="chip-row" style={{ padding: '16px 22px 4px', flexShrink: 0 }}>
+      <div className="chip-row">
         <button className={`chip ${selectedTags.length === 0 ? 'active' : ''}`} onClick={() => setSelectedTags([])}>All</button>
         {allTags.map(tag => (
           <button key={tag} className={`chip ${selectedTags.includes(tag) ? 'active' : ''}`} onClick={() => toggleTag(tag)}>{tag}</button>
         ))}
       </div>
 
-      <div className="sort-row" style={{ padding: '12px 22px 4px', flexShrink: 0 }}>
+      <div className="sort-row">
         <span className="sort-label">Sort</span>
         <div style={{ display: 'flex', gap: 6 }}>
           {SORT_OPTIONS.map(opt => (
@@ -88,7 +86,7 @@ export default function ExercisesPage({ toast }: { toast?: { show: (m: string) =
         </div>
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto', padding: '6px 0 26px', scrollbarWidth: 'none' }}>
+      <div style={{ marginTop: 8 }}>
         {sorted.map((ex, idx) => (
           <DrillRow
             key={ex.id}

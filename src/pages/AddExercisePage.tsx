@@ -90,7 +90,7 @@ export default function AddExercisePage({ toast }: { toast?: { show: (m: string)
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: t.bg }}>
       {/* Top bar */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '52px 18px 14px', borderBottom: `1px solid ${t.line}`, flexShrink: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '24px 32px 14px', borderBottom: `1px solid ${t.line}`, flexShrink: 0 }}>
         <button className="btn-back" onClick={() => navigate('/exercises')}>
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M13 4l-6 6 6 6" /></svg>
         </button>
@@ -99,7 +99,8 @@ export default function AddExercisePage({ toast }: { toast?: { show: (m: string)
       </div>
 
       {/* Form */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '18px 22px 28px', scrollbarWidth: 'none' }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '24px 32px 40px' }}>
+        <div className="form-panel">
         {/* Name */}
         <div className="section-label" style={{ margin: '2px 0 9px' }}>Name</div>
         <input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Bodyweight Squat" />
@@ -252,6 +253,7 @@ export default function AddExercisePage({ toast }: { toast?: { show: (m: string)
             Delete Drill
           </button>
         )}
+        </div>
       </div>
     </div>
   );
