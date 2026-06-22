@@ -89,7 +89,8 @@ export async function fetchExercisesPage(
   }
 
   if (filters.tags && filters.tags.length > 0) {
-    query = query.overlaps('tags', filters.tags);
+    const tagFilters = filters.tags.map(tag => `tags.cs.${JSON.stringify([tag])}`).join(',');
+    query = query.or(tagFilters);
   }
 
   switch (filters.sort) {
