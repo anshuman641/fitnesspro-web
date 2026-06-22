@@ -226,18 +226,25 @@ export default function WorkoutPlayerPage() {
     );
   }
 
-  const hasMedia = curEx?.mediaUri;
-  const isVideo = curEx?.mediaType === 'video';
+  const backdropEx = phase === 'rest' ? nextEx : curEx;
+  const hasMedia = backdropEx?.mediaUri;
+  const isVideo = backdropEx?.mediaType === 'video';
+  const isRestNoMedia = phase === 'rest' && !hasMedia;
+  const darkBg = hasMedia || isRestNoMedia;
+  const restBg = 'linear-gradient(135deg, #1b2838 0%, #2c3e50 40%, #1a3a4a 100%)';
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: t.bg, position: 'relative', overflow: 'hidden' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: isRestNoMedia ? 'none' : t.bg, position: 'relative', overflow: 'hidden' }}>
+      {isRestNoMedia && (
+        <div style={{ position: 'absolute', inset: 0, zIndex: 0, background: restBg }} />
+      )}
       {/* Media backdrop */}
       {hasMedia && (
         <>
           {isVideo ? (
             <video
-              key={curEx!.id}
-              src={curEx!.mediaUri!}
+              key={backdropEx!.id}
+              src={backdropEx!.mediaUri!}
               autoPlay
               loop
               muted
@@ -245,23 +252,26 @@ export default function WorkoutPlayerPage() {
               style={{
                 position: 'absolute', inset: 0, width: '100%', height: '100%',
                 objectFit: 'cover', zIndex: 0,
+                imageRendering: 'auto',
               }}
             />
           ) : (
             <img
-              key={curEx!.id}
-              src={curEx!.mediaUri!}
+              key={backdropEx!.id}
+              src={backdropEx!.mediaUri!}
               alt=""
+              loading="eager"
+              decoding="sync"
               style={{
                 position: 'absolute', inset: 0, width: '100%', height: '100%',
                 objectFit: 'cover', zIndex: 0,
+                imageRendering: 'auto',
               }}
             />
           )}
           <div style={{
             position: 'absolute', inset: 0, zIndex: 1,
-            background: 'rgba(0,0,0,0.65)',
-            backdropFilter: 'blur(2px)',
+            background: 'linear-gradient(to bottom, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.55) 100%)',
           }} />
         </>
       )}
@@ -269,20 +279,20 @@ export default function WorkoutPlayerPage() {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '16px 20px', flexShrink: 0, position: 'relative', zIndex: 2 }}>
         <button onClick={handleClose} style={{
-          width: 40, height: 40, borderRadius: 3, border: `1px solid ${hasMedia ? 'rgba(255,255,255,0.25)' : t.line}`,
-          background: 'transparent', color: hasMedia ? '#fff' : t.ink, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+          width: 40, height: 40, borderRadius: 3, border: `1px solid ${darkBg ? 'rgba(255,255,255,0.25)' : t.line}`,
+          background: 'transparent', color: darkBg ? '#fff' : t.ink, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
         }}>
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><path d="M4 4l8 8M12 4l-8 8" /></svg>
         </button>
         <div style={{ flex: 1, textAlign: 'center' }}>
-          <div style={{ fontFamily: "'Anton', sans-serif", fontSize: 16, textTransform: 'uppercase', color: hasMedia ? '#fff' : t.ink }}>{workout.name}</div>
+          <div style={{ fontFamily: "'Anton', sans-serif", fontSize: 16, textTransform: 'uppercase', color: darkBg ? '#fff' : t.ink }}>{workout.name}</div>
           <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.14em', textTransform: 'uppercase', color: t.accent }}>
             Drill {idx + 1} / {items.length}
           </div>
         </div>
         <button onClick={handleRestart} style={{
-          width: 40, height: 40, borderRadius: 3, border: `1px solid ${hasMedia ? 'rgba(255,255,255,0.25)' : t.line}`,
-          background: 'transparent', color: hasMedia ? '#fff' : t.ink, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+          width: 40, height: 40, borderRadius: 3, border: `1px solid ${darkBg ? 'rgba(255,255,255,0.25)' : t.line}`,
+          background: 'transparent', color: darkBg ? '#fff' : t.ink, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
         }}>
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 8a6 6 0 1 1 1.8 4.3" /><path d="M2 13V8h5" /></svg>
         </button>
@@ -302,32 +312,32 @@ export default function WorkoutPlayerPage() {
             <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.3em', textTransform: 'uppercase', color: t.accent, marginBottom: 16 }}>REST</div>
             <div style={{ position: 'relative', width: RING_SIZE, height: RING_SIZE }}>
               <svg width={RING_SIZE} height={RING_SIZE} viewBox={`0 0 ${RING_SIZE} ${RING_SIZE}`}>
-                <circle cx={RING_SIZE / 2} cy={RING_SIZE / 2} r={RING_R} stroke={hasMedia ? 'rgba(255,255,255,0.2)' : t.line} strokeWidth={RING_STROKE} fill="none" />
+                <circle cx={RING_SIZE / 2} cy={RING_SIZE / 2} r={RING_R} stroke={darkBg ? 'rgba(255,255,255,0.2)' : t.line} strokeWidth={RING_STROKE} fill="none" />
                 <circle cx={RING_SIZE / 2} cy={RING_SIZE / 2} r={RING_R} stroke={t.accent} strokeWidth={RING_STROKE} fill="none"
                   strokeLinecap="round" strokeDasharray={`${CIRCUMFERENCE}`} strokeDashoffset={dashOffset}
                   transform={`rotate(-90 ${RING_SIZE / 2} ${RING_SIZE / 2})`} />
               </svg>
               <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                <span style={{ fontFamily: "'Anton', sans-serif", fontSize: 56, color: hasMedia ? '#fff' : t.ink }}>{fmt(remaining)}</span>
-                <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.14em', textTransform: 'uppercase', color: hasMedia ? 'rgba(255,255,255,0.6)' : t.sub }}>until next</span>
+                <span style={{ fontFamily: "'Anton', sans-serif", fontSize: 56, color: darkBg ? '#fff' : t.ink }}>{fmt(remaining)}</span>
+                <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.14em', textTransform: 'uppercase', color: darkBg ? 'rgba(255,255,255,0.6)' : t.sub }}>until next</span>
               </div>
             </div>
             <button onClick={addRest} style={{
-              border: `1px solid ${hasMedia ? 'rgba(255,255,255,0.25)' : t.line}`, borderRadius: 3, padding: '10px 20px',
-              marginTop: 16, color: hasMedia ? '#fff' : t.ink, fontWeight: 800, fontSize: 11,
+              border: `1px solid ${darkBg ? 'rgba(255,255,255,0.25)' : t.line}`, borderRadius: 3, padding: '10px 20px',
+              marginTop: 16, color: darkBg ? '#fff' : t.ink, fontWeight: 800, fontSize: 11,
               letterSpacing: '.12em', textTransform: 'uppercase', background: 'none', cursor: 'pointer',
             }}>+15 sec</button>
             {nextEx && (
               <div style={{
                 borderRadius: 3, padding: 14, width: '100%', maxWidth: 360, marginTop: 20,
-                background: hasMedia ? 'rgba(255,255,255,0.1)' : t.card, border: `1px solid ${hasMedia ? 'rgba(255,255,255,0.15)' : t.line}`,
+                background: darkBg ? 'rgba(255,255,255,0.1)' : t.card, border: `1px solid ${darkBg ? 'rgba(255,255,255,0.15)' : t.line}`,
               }}>
-                <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.14em', textTransform: 'uppercase', color: hasMedia ? 'rgba(255,255,255,0.6)' : t.sub }}>
+                <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.14em', textTransform: 'uppercase', color: darkBg ? 'rgba(255,255,255,0.6)' : t.sub }}>
                   Next up · {idx + 2} of {items.length}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8 }}>
                   <div className="monogram monogram-sm">{nextEx.title[0]}</div>
-                  <span style={{ fontFamily: "'Anton', sans-serif", fontSize: 16, textTransform: 'uppercase', color: hasMedia ? '#fff' : t.ink, flex: 1 }}>{nextEx.title}</span>
+                  <span style={{ fontFamily: "'Anton', sans-serif", fontSize: 16, textTransform: 'uppercase', color: darkBg ? '#fff' : t.ink, flex: 1 }}>{nextEx.title}</span>
                 </div>
               </div>
             )}
@@ -374,8 +384,8 @@ export default function WorkoutPlayerPage() {
       {/* Transport controls */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 22, padding: '12px 0', flexShrink: 0, position: 'relative', zIndex: 2 }}>
         <button onClick={handlePrev} disabled={phase === 'work' && idx === 0} style={{
-          width: 54, height: 54, borderRadius: 3, border: `1px solid ${hasMedia ? 'rgba(255,255,255,0.25)' : t.line}`,
-          background: 'none', color: hasMedia ? '#fff' : t.ink, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+          width: 54, height: 54, borderRadius: 3, border: `1px solid ${darkBg ? 'rgba(255,255,255,0.25)' : t.line}`,
+          background: 'none', color: darkBg ? '#fff' : t.ink, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
           opacity: phase === 'work' && idx === 0 ? 0.4 : 1,
         }}>
           <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor"><rect x="2" y="3" width="3" height="12" /><polygon points="16,3 7,9 16,15" /></svg>
@@ -391,13 +401,13 @@ export default function WorkoutPlayerPage() {
           )}
         </button>
         <button onClick={handleSkip} style={{
-          width: 54, height: 54, borderRadius: 3, border: `1px solid ${hasMedia ? 'rgba(255,255,255,0.25)' : t.line}`,
-          background: 'none', color: hasMedia ? '#fff' : t.ink, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+          width: 54, height: 54, borderRadius: 3, border: `1px solid ${darkBg ? 'rgba(255,255,255,0.25)' : t.line}`,
+          background: 'none', color: darkBg ? '#fff' : t.ink, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
         }}>
           <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor"><polygon points="2,3 11,9 2,15" /><rect x="13" y="3" width="3" height="12" /></svg>
         </button>
       </div>
-      <p style={{ textAlign: 'center', fontSize: 10, fontWeight: 800, letterSpacing: '.14em', textTransform: 'uppercase', color: hasMedia ? 'rgba(255,255,255,0.6)' : t.sub, marginBottom: 20, position: 'relative', zIndex: 2 }}>
+      <p style={{ textAlign: 'center', fontSize: 10, fontWeight: 800, letterSpacing: '.14em', textTransform: 'uppercase', color: darkBg ? 'rgba(255,255,255,0.6)' : t.sub, marginBottom: 20, position: 'relative', zIndex: 2 }}>
         {phase === 'rest' ? 'Skip rest to start now' : nextEx ? `Next · ${nextEx.title}` : 'Final drill'}
       </p>
     </div>
