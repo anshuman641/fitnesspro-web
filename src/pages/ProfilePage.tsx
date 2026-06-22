@@ -2,11 +2,13 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme, type ThemeName } from '../context/ThemeContext';
 import { useProfile } from '../context/ProfileContext';
+import { useAuth } from '../context/AuthContext';
 
 const THEME_LIST: ThemeName[] = ['dark', 'light', 'kelly', 'navy'];
 
 export default function ProfilePage() {
   const { t, theme, setTheme, themeDots } = useTheme();
+  const { signOut } = useAuth();
   const navigate = useNavigate();
   const { profile, setProfile, stats, xp, level, xpForNextLevel, xpProgress } = useProfile();
   const [goalInput, setGoalInput] = useState('');
@@ -135,6 +137,13 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
+
+      <button onClick={signOut} style={{
+        marginTop: 28, padding: '14px 32px', borderRadius: 3,
+        border: `1px solid ${t.line}`, background: 'transparent',
+        color: t.sub, fontWeight: 800, fontSize: 10, letterSpacing: '.14em',
+        textTransform: 'uppercase', cursor: 'pointer',
+      }}>Sign Out</button>
     </div>
   );
 }

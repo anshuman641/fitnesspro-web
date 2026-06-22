@@ -1,89 +1,36 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useCallback, ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthContext';
-import type { WorkoutPlan, WorkoutItem, WorkoutMode, RepsSet, DurationSet } from '../types';
+import {
+  fetchWorkoutsPage,
+  fetchWorkoutById as fetchWorkoutByIdQuery,
+  type PaginatedResult,
+  type PaginationParams,
+  type WorkoutFilters,
+} from '../lib/queryHelpers';
+import type { WorkoutPlan, DurationSet } from '../types';
 
 interface WorkoutContextType {
-  workouts: WorkoutPlan[];
-  publicWorkouts: WorkoutPlan[];
-  loading: boolean;
+  searchWorkouts: (filters: WorkoutFilters, pagination: PaginationParams) => Promise<PaginatedResult<WorkoutPlan>>;
+  fetchWorkoutById: (id: string) => Promise<WorkoutPlan | null>;
   saveWorkout: (workout: Omit<WorkoutPlan, 'id'>) => Promise<void>;
+  updateWorkout: (workout: WorkoutPlan) => Promise<void>;
   deleteWorkout: (id: string) => Promise<void>;
-  refresh: () => Promise<void>;
 }
 
 const WorkoutContext = createContext<WorkoutContextType | null>(null);
 
-function mapRow(r: any): WorkoutPlan {
-  const items: WorkoutItem[] = (r.workout_items ?? [])
-    .sort((a: any, b: any) => a.sort_order - b.sort_order)
-    .map((wi: any) => {
-      const mode: WorkoutMode = wi.mode === 'duration' || wi.mode === 'time' ? 'duration' : 'reps';
-      let sets: (RepsSet | DurationSet)[];
-      if (Array.isArray(wi.set_details) && wi.set_details.length > 0) {
-        sets = wi.set_details;
-      } else if (mode === 'duration') {
-        sets = [{ sec: String(wi.duration || 30) }];
-      } else {
-        sets = Array.from({ length: wi.sets || 1 }, () => ({ kg: '0', reps: '12' }));
-      }
-      return { exerciseId: wi.exercise_id, mode, sets };
-    });
-  return {
-    id: r.id,
-    name: r.name,
-    items,
-    isPublic: r.is_public ?? false,
-    userId: r.user_id,
-  };
-}
-
 export function WorkoutProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
-  const [workouts, setWorkouts] = useState<WorkoutPlan[]>([]);
-  const [publicWorkouts, setPublicWorkouts] = useState<WorkoutPlan[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  const fetchWorkouts = async () => {
-    if (!user) return;
-    setLoading(true);
+  const searchWorkouts = useCallback(async (filters: WorkoutFilters, pagination: PaginationParams) => {
+    if (!user) return { data: [], totalCount: 0, hasMore: false };
+    return fetchWorkoutsPage(user.id, filters, pagination);
+  }, [user]);
 
-    const { data: ownRows, error: ownError } = await supabase
-      .from('workouts')
-      .select('*, workout_items(*)')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
-
-    if (ownError) {
-      console.error('Failed to fetch workouts:', ownError.message);
-      setLoading(false);
-      return;
-    }
-
-    const { data: pubRows, error: pubError } = await supabase
-      .from('workouts')
-      .select('*, workout_items(*)')
-      .eq('is_public', true)
-      .neq('user_id', user.id)
-      .order('created_at', { ascending: false });
-
-    if (pubError) {
-      console.error('Failed to fetch public workouts:', pubError.message);
-    }
-
-    setWorkouts((ownRows ?? []).map(mapRow));
-    setPublicWorkouts((pubRows ?? []).map(mapRow));
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    if (user) fetchWorkouts();
-    else {
-      setWorkouts([]);
-      setPublicWorkouts([]);
-      setLoading(false);
-    }
-  }, [user?.id]);
+  const fetchWorkoutById = useCallback(async (id: string) => {
+    return fetchWorkoutByIdQuery(id);
+  }, []);
 
   const saveWorkout = async (workout: Omit<WorkoutPlan, 'id'>) => {
     if (!user) return;
@@ -115,22 +62,50 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
       }));
       await supabase.from('workout_items').insert(itemRows);
     }
+  };
 
-    await fetchWorkouts();
+  const updateWorkout = async (workout: WorkoutPlan) => {
+    if (!user) return;
+    const { error } = await supabase
+      .from('workouts')
+      .update({
+        name: workout.name,
+        rest_between: workout.restBetween ?? 15,
+        is_public: workout.isPublic,
+      })
+      .eq('id', workout.id);
+
+    if (error) {
+      console.error('Failed to update workout:', error.message);
+      return;
+    }
+
+    await supabase.from('workout_items').delete().eq('workout_id', workout.id);
+
+    if (workout.items.length > 0) {
+      const itemRows = workout.items.map((item, i) => ({
+        workout_id: workout.id,
+        exercise_id: item.exerciseId,
+        mode: item.mode,
+        duration: item.mode === 'duration' ? (parseInt((item.sets[0] as DurationSet)?.sec) || 30) : 0,
+        sets: item.mode === 'reps' ? item.sets.length : 1,
+        set_details: item.sets,
+        sort_order: i,
+      }));
+      await supabase.from('workout_items').insert(itemRows);
+    }
   };
 
   const deleteWorkout = async (id: string) => {
     const { error } = await supabase.from('workouts').delete().eq('id', id);
     if (error) {
       console.error('Failed to delete workout:', error.message);
-      return;
     }
-    setWorkouts((prev) => prev.filter((w) => w.id !== id));
   };
 
   return (
     <WorkoutContext.Provider
-      value={{ workouts, publicWorkouts, loading, saveWorkout, deleteWorkout, refresh: fetchWorkouts }}
+      value={{ searchWorkouts, fetchWorkoutById, saveWorkout, updateWorkout, deleteWorkout }}
     >
       {children}
     </WorkoutContext.Provider>

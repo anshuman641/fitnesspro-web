@@ -8,7 +8,7 @@ const DIFFICULTIES: Difficulty[] = ['Beginner', 'Intermediate', 'Advanced'];
 
 export default function AddExercisePage({ toast }: { toast?: { show: (m: string) => void } }) {
   const { t } = useTheme();
-  const { allTags, addExercise, updateExercise, deleteExercise, exercises } = useExercises();
+  const { allTags, loadTags, addExercise, updateExercise, deleteExercise, fetchExerciseById } = useExercises();
   const navigate = useNavigate();
   const { exerciseId } = useParams<{ exerciseId?: string }>();
   const isEdit = !!exerciseId;
@@ -24,10 +24,11 @@ export default function AddExercisePage({ toast }: { toast?: { show: (m: string)
   const [isPublic, setIsPublic] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // Pre-fill fields when editing
+  useEffect(() => { loadTags(); }, [loadTags]);
+
   useEffect(() => {
-    if (isEdit && exerciseId) {
-      const ex = exercises.find(e => e.id === exerciseId);
+    if (!isEdit || !exerciseId) return;
+    fetchExerciseById(exerciseId).then(ex => {
       if (ex) {
         setName(ex.title);
         setDifficulty(ex.difficulty);
@@ -38,8 +39,8 @@ export default function AddExercisePage({ toast }: { toast?: { show: (m: string)
         setTags([...ex.tags]);
         setIsPublic(ex.isPublic);
       }
-    }
-  }, [isEdit, exerciseId, exercises]);
+    });
+  }, [isEdit, exerciseId, fetchExerciseById]);
 
   const updateItem = (arr: string[], i: number, v: string, setter: (a: string[]) => void) =>
     setter(arr.map((x, j) => j === i ? v : x));

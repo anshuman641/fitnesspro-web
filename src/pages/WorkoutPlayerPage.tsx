@@ -6,7 +6,7 @@ import { useExercises } from '../context/ExerciseContext';
 import { useActiveSession } from '../context/ActiveSessionContext';
 import { useProfile } from '../context/ProfileContext';
 import { useWorkoutAudio } from '../hooks/useWorkoutAudio';
-import type { WorkoutItem, DurationSet } from '../types';
+import type { Exercise, WorkoutItem, WorkoutPlan, DurationSet } from '../types';
 
 const RING_SIZE = 208;
 const RING_R = 92;
@@ -34,26 +34,54 @@ export default function WorkoutPlayerPage() {
   const { t } = useTheme();
   const { workoutId } = useParams();
   const navigate = useNavigate();
-  const { workouts } = useWorkouts();
-  const { exercises, publicExercises } = useExercises();
-  const allEx = [...exercises, ...publicExercises];
-  const exById = (id: string) => allEx.find(e => e.id === id);
+  const { fetchWorkoutById } = useWorkouts();
+  const { fetchExercisesByIds } = useExercises();
 
   const { setActive, confirmLeave } = useActiveSession();
   const { recordWorkoutCompletion } = useProfile();
   const { playWork, playRest, stopAll } = useWorkoutAudio();
 
-  const workout = workouts.find(w => w.id === workoutId);
+  const [workout, setWorkout] = useState<WorkoutPlan | null>(null);
+  const [exMap, setExMap] = useState<Map<string, Exercise>>(new Map());
+  const [dataLoading, setDataLoading] = useState(true);
+
   const items = workout?.items ?? [];
+  const exById = (id: string) => exMap.get(id) ?? null;
+
+  useEffect(() => {
+    if (!workoutId) return;
+    (async () => {
+      const w = await fetchWorkoutById(workoutId);
+      if (!w) { setDataLoading(false); return; }
+      setWorkout(w);
+      const ids = [...new Set(w.items.map(it => it.exerciseId))];
+      if (ids.length > 0) {
+        const exercises = await fetchExercisesByIds(ids);
+        setExMap(new Map(exercises.map(ex => [ex.id, ex])));
+      }
+      setDataLoading(false);
+    })();
+  }, [workoutId, fetchWorkoutById, fetchExercisesByIds]);
 
   const [idx, setIdx] = useState(0);
   const [phase, setPhase] = useState<Phase>('work');
-  const [remaining, setRemaining] = useState(() => items[0] ? exTime(items[0]) : 0);
-  const [totalTime, setTotalTime] = useState(() => items[0] ? exTime(items[0]) : 0);
+  const [remaining, setRemaining] = useState(0);
+  const [totalTime, setTotalTime] = useState(0);
   const [paused, setPaused] = useState(false);
   const [done, setDone] = useState(false);
   const [totalElapsed, setTotalElapsed] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const initialized = useRef(false);
+
+  useEffect(() => {
+    if (!workout || initialized.current) return;
+    if (workout.items.length > 0) {
+      const dur = exTime(workout.items[0]);
+      setRemaining(dur);
+      setTotalTime(dur);
+      initialized.current = true;
+    }
+  }, [workout]);
 
   useEffect(() => {
     setActive(true);
@@ -104,6 +132,14 @@ export default function WorkoutPlayerPage() {
     }, 1000);
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, [done, paused, phase, idx, items.length, startPhase]);
+
+  if (dataLoading) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', background: t.bg }}>
+        <span style={{ fontFamily: "'Anton', sans-serif", fontSize: 18, textTransform: 'uppercase', color: t.sub }}>Loading session...</span>
+      </div>
+    );
+  }
 
   if (!workout) {
     return (
@@ -200,8 +236,8 @@ export default function WorkoutPlayerPage() {
         <>
           {isVideo ? (
             <video
-              key={curEx.id}
-              src={curEx.mediaUri!}
+              key={curEx!.id}
+              src={curEx!.mediaUri!}
               autoPlay
               loop
               muted
@@ -213,8 +249,8 @@ export default function WorkoutPlayerPage() {
             />
           ) : (
             <img
-              key={curEx.id}
-              src={curEx.mediaUri!}
+              key={curEx!.id}
+              src={curEx!.mediaUri!}
               alt=""
               style={{
                 position: 'absolute', inset: 0, width: '100%', height: '100%',
