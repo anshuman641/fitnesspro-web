@@ -169,8 +169,6 @@ function AppShell() {
   if (!user) return <LoginPage />;
 
   const isFullScreen = location.pathname.startsWith('/workouts/play/') ||
-    location.pathname === '/exercises/new' ||
-    location.pathname.startsWith('/exercises/edit/') ||
     location.pathname === '/workouts/new';
 
   if (location.pathname.startsWith('/workouts/play/')) {
