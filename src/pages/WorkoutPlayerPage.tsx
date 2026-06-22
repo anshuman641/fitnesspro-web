@@ -133,6 +133,16 @@ export default function WorkoutPlayerPage() {
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, [done, paused, phase, idx, items.length, startPhase]);
 
+  const completionRecorded = useRef(false);
+  useEffect(() => {
+    if (done && !completionRecorded.current) {
+      completionRecorded.current = true;
+      stopAll();
+      setActive(false);
+      recordWorkoutCompletion(totalElapsed);
+    }
+  }, [done, totalElapsed, stopAll, setActive, recordWorkoutCompletion]);
+
   if (dataLoading) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', background: t.bg }}>
@@ -183,16 +193,6 @@ export default function WorkoutPlayerPage() {
     setRemaining(r => r + 15);
     setTotalTime(tt => tt + 15);
   };
-
-  const completionRecorded = useRef(false);
-  useEffect(() => {
-    if (done && !completionRecorded.current) {
-      completionRecorded.current = true;
-      stopAll();
-      setActive(false);
-      recordWorkoutCompletion(totalElapsed);
-    }
-  }, [done, totalElapsed, stopAll, setActive, recordWorkoutCompletion]);
 
   if (done) {
     const totalMin = Math.max(1, Math.round(totalElapsed / 60));
