@@ -12,7 +12,7 @@ interface BuilderItem extends WorkoutItem {
 let uidCounter = 0;
 const uid = () => 'b' + (++uidCounter) + '_' + Date.now();
 
-export default function WorkoutBuilderPage() {
+export default function WorkoutBuilderPage({ toast }: { toast?: { show: (m: string) => void } }) {
   const { t } = useTheme();
   const { exercises, publicExercises, allTags } = useExercises();
   const { saveWorkout } = useWorkouts();
@@ -60,8 +60,8 @@ export default function WorkoutBuilderPage() {
     updateItem(itemUid, it => ({ ...it, sets: it.sets.map((st, i) => i === idx ? { ...st, [field]: val } : st) }));
 
   const handleSave = async () => {
-    if (!wkName.trim()) { alert('Name your workout'); return; }
-    if (!items.length) { alert('Add an exercise first'); return; }
+    if (!wkName.trim()) { toast?.show('Name your session'); return; }
+    if (!items.length) { toast?.show('Add at least one drill'); return; }
     setSaving(true);
     await saveWorkout({
       name: wkName.trim(),
@@ -69,142 +69,153 @@ export default function WorkoutBuilderPage() {
       isPublic: false,
     });
     setSaving(false);
+    toast?.show('Session saved');
     navigate('/workouts');
   };
 
-  const segStyle = (active: boolean): React.CSSProperties => ({
-    flex: 1, padding: '9px 0', borderRadius: 10, textAlign: 'center',
-    background: active ? t.surface : 'transparent', fontWeight: 800, fontSize: 13,
-    color: active ? t.accent : t.sub, cursor: 'pointer',
-  });
-
   return (
-    <div className="page">
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-        <button className="btn-back" onClick={() => navigate('/workouts')}>‹</button>
-        <h1 style={{ fontFamily: 'Fredoka', fontWeight: 600, fontSize: 22, letterSpacing: -0.3, color: t.ink }}>New Workout</h1>
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: t.bg }}>
+      {/* Top bar */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '52px 18px 14px', borderBottom: `1px solid ${t.line}`, flexShrink: 0 }}>
+        <button className="btn-back" onClick={() => navigate('/workouts')}>
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M13 4l-6 6 6 6" /></svg>
+        </button>
+        <h1 style={{ flex: 1, fontFamily: "'Anton', sans-serif", fontSize: 20, letterSpacing: '.04em', textTransform: 'uppercase', color: t.ink }}>Build Session</h1>
       </div>
 
-      <input className="input" value={wkName} onChange={e => setWkName(e.target.value)} placeholder="Workout name — e.g. Morning Reset" style={{ marginTop: 12 }} />
+      {/* Form */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '18px 22px 28px', scrollbarWidth: 'none' }}>
+        <input className="input" value={wkName} onChange={e => setWkName(e.target.value)} placeholder="Session name — e.g. Morning Reset" />
 
-      <div className="search-box">
-        <span className="search-icon">🔍</span>
-        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search exercises to add" />
-      </div>
-
-      <div className="chip-row">
-        <button className={`chip ${selectedTags.length === 0 ? 'active' : ''}`} onClick={() => setSelectedTags([])}>All</button>
-        {allTags.map(tag => (
-          <button key={tag} className={`chip ${selectedTags.includes(tag) ? 'active' : ''}`} onClick={() => toggleTag(tag)}>{tag}</button>
-        ))}
-      </div>
-
-      <div className="section-label">Add Exercises ({candidates.length})</div>
-      {candidates.map(ex => {
-        const added = items.some(i => i.exerciseId === ex.id);
-        return (
-          <div key={ex.id} className="card" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 12 }}>
-            <div className="monogram monogram-sm">{ex.title[0]}</div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontFamily: 'Fredoka', fontWeight: 500, fontSize: 15.5, color: t.ink }}>{ex.title}</div>
-              <div style={{ fontSize: 12, fontWeight: 600, color: t.sub, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {ex.difficulty} · {ex.tags.join(', ')}
-              </div>
-            </div>
-            <button onClick={() => toggleExercise(ex.id)} style={{
-              width: 40, height: 40, borderRadius: 13, background: added ? t.accent : t.accentSoft,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: added ? t.onAccent : t.accent, fontWeight: 700, fontSize: 16, cursor: 'pointer',
-            }}>{added ? '✓' : '+'}</button>
-          </div>
-        );
-      })}
-
-      <div className="section-label" style={{ marginTop: 22 }}>Your Workout ({items.length})</div>
-      {items.length === 0 && (
-        <div className="empty-state" style={{ borderRadius: 18, padding: 26 }}>
-          <h3 style={{ fontSize: 15.5 }}>No exercises yet</h3>
-          <p style={{ marginBottom: 0, fontSize: 13 }}>Tap + on an exercise above to build your workout.</p>
+        <div className="search-box" style={{ marginTop: 14 }}>
+          <svg width="17" height="17" viewBox="0 0 18 18" fill="none" stroke={t.sub} strokeWidth="2" strokeLinecap="round"><circle cx="8" cy="8" r="6" /><path d="M16 16l-3.6-3.6" /></svg>
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="SEARCH DRILLS TO ADD" />
         </div>
-      )}
 
-      {items.map(it => {
-        const ex = allEx.find(e => e.id === it.exerciseId);
-        if (!ex) return null;
-        const isReps = it.mode === 'reps';
-        return (
-          <div key={it.uid} className="card" style={{ padding: 14 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 11, marginBottom: 12 }}>
-              <div className="monogram monogram-sm">{ex.title[0]}</div>
-              <span style={{ flex: 1, fontFamily: 'Fredoka', fontWeight: 500, fontSize: 16, color: t.ink }}>{ex.title}</span>
-              <button onClick={() => toggleExercise(it.exerciseId)} style={{
-                width: 30, height: 30, borderRadius: 10, background: t.chip,
+        <div className="chip-row" style={{ padding: '12px 0 8px' }}>
+          <button className={`chip ${selectedTags.length === 0 ? 'active' : ''}`} onClick={() => setSelectedTags([])}>All</button>
+          {allTags.map(tag => (
+            <button key={tag} className={`chip ${selectedTags.includes(tag) ? 'active' : ''}`} onClick={() => toggleTag(tag)}>{tag}</button>
+          ))}
+        </div>
+
+        {/* Candidate list */}
+        {candidates.map(ex => {
+          const added = items.some(i => i.exerciseId === ex.id);
+          return (
+            <div key={ex.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0', borderBottom: `1px solid ${t.line}` }}>
+              <div className="monogram">{ex.title[0]}</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontFamily: "'Anton', sans-serif", fontSize: 16, lineHeight: 1, letterSpacing: '.02em', textTransform: 'uppercase', color: t.ink }}>{ex.title}</div>
+                <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.1em', textTransform: 'uppercase', color: t.sub, marginTop: 4 }}>
+                  {ex.difficulty} · {ex.tags.join(', ')}
+                </div>
+              </div>
+              <button onClick={() => toggleExercise(ex.id)} style={{
+                width: 40, height: 40, borderRadius: 3,
+                background: added ? t.accent : 'transparent',
+                border: added ? 'none' : `1px solid ${t.line}`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: t.sub, fontSize: 12, cursor: 'pointer',
-              }}>✕</button>
+                color: added ? '#fff' : t.accent, cursor: 'pointer',
+              }}>
+                {added ? (
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M3 8l4 4 6-8" /></svg>
+                ) : (
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><path d="M8 3v10M3 8h10" /></svg>
+                )}
+              </button>
             </div>
+          );
+        })}
 
-            <div style={{ display: 'flex', gap: 6, padding: 5, borderRadius: 13, background: t.chip, marginBottom: 12 }}>
-              <button onClick={() => setMode(it.uid, 'reps')} style={segStyle(isReps)}>Reps & weight</button>
-              <button onClick={() => setMode(it.uid, 'duration')} style={segStyle(!isReps)}>Duration</button>
-            </div>
+        {/* Selected items */}
+        {items.length > 0 && (
+          <div className="section-label" style={{ marginTop: 22 }}>Your Session ({items.length})</div>
+        )}
 
-            <div style={{ display: 'flex', gap: 8, paddingLeft: 4, paddingBottom: 6 }}>
-              <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: 0.5, textTransform: 'uppercase', color: t.sub, width: 30 }}>Set</span>
-              {isReps ? (
-                <>
-                  <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: 0.5, textTransform: 'uppercase', color: t.sub, flex: 1, textAlign: 'center' }}>Kg</span>
-                  <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: 0.5, textTransform: 'uppercase', color: t.sub, flex: 1, textAlign: 'center' }}>Reps</span>
-                </>
-              ) : (
-                <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: 0.5, textTransform: 'uppercase', color: t.sub, flex: 1, textAlign: 'center' }}>Seconds</span>
-              )}
-              <div style={{ width: 30 }} />
-            </div>
+        {items.map(it => {
+          const ex = allEx.find(e => e.id === it.exerciseId);
+          if (!ex) return null;
+          const isReps = it.mode === 'reps';
+          return (
+            <div key={it.uid} style={{ background: t.card, border: `1px solid ${t.line}`, borderRadius: 3, padding: 14, marginBottom: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 11, marginBottom: 12 }}>
+                <div className="monogram monogram-sm">{ex.title[0]}</div>
+                <span style={{ flex: 1, fontFamily: "'Anton', sans-serif", fontSize: 16, textTransform: 'uppercase', color: t.ink }}>{ex.title}</span>
+                <button onClick={() => toggleExercise(it.exerciseId)} style={{
+                  width: 30, height: 30, borderRadius: 3, border: `1px solid ${t.line}`,
+                  background: 'transparent', color: t.sub, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                }}>
+                  <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M3 3l7 7M10 3l-7 7" /></svg>
+                </button>
+              </div>
 
-            {it.sets.map((st, si) => (
-              <div key={si} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                <div style={{
-                  width: 30, height: 34, borderRadius: 10, background: t.accentSoft,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontFamily: 'Fredoka', fontWeight: 600, fontSize: 13, color: t.accent,
-                }}>{si + 1}</div>
+              <div className="seg-track" style={{ marginBottom: 12 }}>
+                <button className={`seg-btn ${isReps ? 'active' : ''}`} onClick={() => setMode(it.uid, 'reps')}>Reps & weight</button>
+                <button className={`seg-btn ${!isReps ? 'active' : ''}`} onClick={() => setMode(it.uid, 'duration')}>Duration</button>
+              </div>
+
+              <div style={{ display: 'flex', gap: 8, paddingLeft: 4, paddingBottom: 6 }}>
+                <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.1em', textTransform: 'uppercase', color: t.sub, width: 30 }}>Set</span>
                 {isReps ? (
                   <>
-                    <input className="input" style={{ flex: 1, height: 38, textAlign: 'center', padding: '0 8px' }}
-                      value={(st as RepsSet).kg} onChange={e => setSetField(it.uid, si, 'kg', e.target.value)}
-                      inputMode="decimal" placeholder="0" />
-                    <input className="input" style={{ flex: 1, height: 38, textAlign: 'center', padding: '0 8px' }}
-                      value={(st as RepsSet).reps} onChange={e => setSetField(it.uid, si, 'reps', e.target.value)}
-                      inputMode="numeric" placeholder="0" />
+                    <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.1em', textTransform: 'uppercase', color: t.sub, flex: 1, textAlign: 'center' }}>Kg</span>
+                    <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.1em', textTransform: 'uppercase', color: t.sub, flex: 1, textAlign: 'center' }}>Reps</span>
                   </>
                 ) : (
-                  <input className="input" style={{ flex: 1, height: 38, textAlign: 'center', padding: '0 8px' }}
-                    value={(st as DurationSet).sec} onChange={e => setSetField(it.uid, si, 'sec', e.target.value)}
-                    inputMode="numeric" placeholder="30" />
+                  <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.1em', textTransform: 'uppercase', color: t.sub, flex: 1, textAlign: 'center' }}>Seconds</span>
                 )}
-                <button onClick={() => removeSet(it.uid, si)} style={{
-                  width: 30, height: 30, borderRadius: 10, background: t.chip,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: t.sub, fontSize: 13, cursor: 'pointer',
-                }}>−</button>
+                <div style={{ width: 30 }} />
               </div>
-            ))}
-            <button onClick={() => addSet(it.uid)} style={{
-              marginTop: 4, padding: 4, background: 'none', color: t.accent, fontWeight: 800, fontSize: 13, cursor: 'pointer',
-            }}>+ Add set</button>
-          </div>
-        );
-      })}
 
-      {items.length > 0 && (
-        <button className="btn-primary" onClick={handleSave} disabled={saving} style={{
-          width: '100%', padding: '16px 0', borderRadius: 16, fontSize: 16, marginTop: 6,
-          boxShadow: 'var(--shadow)',
-        }}>
-          {saving ? 'Saving...' : `Save workout · ${items.length} ${items.length === 1 ? 'exercise' : 'exercises'}`}
-        </button>
-      )}
+              {it.sets.map((st, si) => (
+                <div key={si} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                  <div style={{
+                    width: 30, height: 34, borderRadius: 2, border: `1px solid ${t.line}`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontFamily: "'Anton', sans-serif", fontSize: 13, color: t.accent,
+                  }}>{si + 1}</div>
+                  {isReps ? (
+                    <>
+                      <input className="input" style={{ flex: 1, height: 38, textAlign: 'center', padding: '0 8px', background: t.bg }}
+                        value={(st as RepsSet).kg} onChange={e => setSetField(it.uid, si, 'kg', e.target.value)}
+                        inputMode="decimal" placeholder="0" />
+                      <input className="input" style={{ flex: 1, height: 38, textAlign: 'center', padding: '0 8px', background: t.bg }}
+                        value={(st as RepsSet).reps} onChange={e => setSetField(it.uid, si, 'reps', e.target.value)}
+                        inputMode="numeric" placeholder="0" />
+                    </>
+                  ) : (
+                    <input className="input" style={{ flex: 1, height: 38, textAlign: 'center', padding: '0 8px', background: t.bg }}
+                      value={(st as DurationSet).sec} onChange={e => setSetField(it.uid, si, 'sec', e.target.value)}
+                      inputMode="numeric" placeholder="30" />
+                  )}
+                  <button onClick={() => removeSet(it.uid, si)} style={{
+                    width: 30, height: 30, borderRadius: 3, border: `1px solid ${t.line}`,
+                    background: 'transparent', color: t.sub, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                  }}>
+                    <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M2 5.5h7" /></svg>
+                  </button>
+                </div>
+              ))}
+              <button onClick={() => addSet(it.uid)} style={{
+                marginTop: 4, padding: 4, background: 'none', color: t.accent, fontWeight: 800, fontSize: 10,
+                letterSpacing: '.1em', textTransform: 'uppercase', cursor: 'pointer',
+              }}>+ Add set</button>
+            </div>
+          );
+        })}
+
+        {items.length > 0 && (
+          <button onClick={handleSave} disabled={saving} style={{
+            width: '100%', padding: '16px 0', borderRadius: 3, fontSize: 11, fontWeight: 800,
+            letterSpacing: '.12em', textTransform: 'uppercase', marginTop: 6,
+            background: t.accent, color: '#fff', cursor: 'pointer',
+            opacity: saving ? 0.6 : 1,
+          }}>
+            {saving ? 'Saving...' : `Save session · ${items.length} ${items.length === 1 ? 'drill' : 'drills'}`}
+          </button>
+        )}
+      </div>
     </div>
   );
 }
