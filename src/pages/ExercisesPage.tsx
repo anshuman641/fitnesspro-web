@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import { useExercises } from '../context/ExerciseContext';
@@ -11,37 +11,79 @@ const SORT_OPTIONS = [
   { key: 'difficulty', label: 'Level' },
 ] as const;
 
-const DIFF_ORDER: Record<string, number> = { Beginner: 0, Intermediate: 1, Advanced: 2 };
-
 export default function ExercisesPage({ toast }: { toast?: { show: (m: string) => void } }) {
   const { t } = useTheme();
-  const { exercises, publicExercises, allTags, deleteExercise } = useExercises();
+  const { searchExercises, fetchExerciseById, allTags, loadTags, deleteExercise } = useExercises();
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [page, setPage] = useState(0);
+  const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [sort, setSort] = useState<string>('az');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [expandedExercise, setExpandedExercise] = useState<Exercise | null>(null);
+  const [expandLoading, setExpandLoading] = useState(false);
 
-  const allExercises = useMemo(() => [...exercises, ...publicExercises], [exercises, publicExercises]);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const fetchIdRef = useRef(0);
 
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return allExercises.filter(ex => {
-      const matchSearch = !q || ex.title.toLowerCase().includes(q) || ex.tags.some(tag => tag.toLowerCase().includes(q));
-      const matchTags = selectedTags.length === 0 || selectedTags.some(tag => ex.tags.includes(tag));
-      return matchSearch && matchTags;
+  const fetchPage = useCallback(async (pageNum: number, append: boolean) => {
+    const id = ++fetchIdRef.current;
+    setLoading(true);
+    const result = await searchExercises(
+      { search: search.trim() || undefined, tags: selectedTags.length > 0 ? selectedTags : undefined, sort: sort as 'az' | 'recent' | 'difficulty' },
+      { page: pageNum },
+    );
+    if (id !== fetchIdRef.current) return;
+    setExercises(prev => append ? [...prev, ...result.data] : result.data);
+    setTotalCount(result.totalCount);
+    setHasMore(result.hasMore);
+    setLoading(false);
+  }, [searchExercises, search, selectedTags, sort]);
+
+  useEffect(() => {
+    loadTags();
+  }, [loadTags]);
+
+  useEffect(() => {
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setPage(0);
+      setExpandedId(null);
+      setExpandedExercise(null);
+      fetchPage(0, false);
+    }, 300);
+    return () => clearTimeout(debounceRef.current);
+  }, [search, selectedTags, sort, fetchPage]);
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+    const observer = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMore && !loading) {
+        const nextPage = page + 1;
+        setPage(nextPage);
+        fetchPage(nextPage, true);
+      }
+    }, { threshold: 0.1 });
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [hasMore, loading, page, fetchPage]);
+
+  useEffect(() => {
+    if (!expandedId) { setExpandedExercise(null); return; }
+    setExpandLoading(true);
+    fetchExerciseById(expandedId).then(ex => {
+      setExpandedExercise(ex);
+      setExpandLoading(false);
     });
-  }, [allExercises, search, selectedTags]);
-
-  const sorted = useMemo(() => {
-    return [...filtered].sort((a, b) => {
-      if (sort === 'az') return a.title.localeCompare(b.title);
-      if (sort === 'recent') return (b.createdAt ?? '').localeCompare(a.createdAt ?? '');
-      if (sort === 'difficulty') return (DIFF_ORDER[a.difficulty] ?? 0) - (DIFF_ORDER[b.difficulty] ?? 0) || a.title.localeCompare(b.title);
-      return 0;
-    });
-  }, [filtered, sort]);
+  }, [expandedId, fetchExerciseById]);
 
   const toggleTag = (tag: string) => {
     setSelectedTags(prev => prev.includes(tag) ? prev.filter(x => x !== tag) : [...prev, tag]);
@@ -50,6 +92,8 @@ export default function ExercisesPage({ toast }: { toast?: { show: (m: string) =
   const handleDelete = async (ex: Exercise) => {
     if (!window.confirm(`Delete "${ex.title}"? This action cannot be undone.`)) return;
     await deleteExercise(ex.id);
+    setExercises(prev => prev.filter(e => e.id !== ex.id));
+    setTotalCount(prev => prev - 1);
     toast?.show('Drill deleted');
     setExpandedId(null);
   };
@@ -63,7 +107,7 @@ export default function ExercisesPage({ toast }: { toast?: { show: (m: string) =
           <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round"><path d="M11 5v12M5 11h12" /></svg>
         </button>
       </div>
-      <div className="page-count">{filtered.length} movements</div>
+      <div className="page-count">{totalCount} movements</div>
 
       <div className="search-box">
         <svg width="17" height="17" viewBox="0 0 18 18" fill="none" stroke={t.sub} strokeWidth="2" strokeLinecap="round"><circle cx="8" cy="8" r="6" /><path d="M16 16l-3.6-3.6" /></svg>
@@ -87,10 +131,12 @@ export default function ExercisesPage({ toast }: { toast?: { show: (m: string) =
       </div>
 
       <div style={{ marginTop: 8 }}>
-        {sorted.map((ex, idx) => (
+        {exercises.map((ex, idx) => (
           <DrillRow
             key={ex.id}
             exercise={ex}
+            expandedExercise={expandedId === ex.id ? expandedExercise : null}
+            expandLoading={expandedId === ex.id && expandLoading}
             index={idx + 1}
             expanded={expandedId === ex.id}
             onToggle={() => setExpandedId(expandedId === ex.id ? null : ex.id)}
@@ -101,7 +147,13 @@ export default function ExercisesPage({ toast }: { toast?: { show: (m: string) =
         ))}
         <div style={{ borderTop: `1px solid ${t.line}` }} />
 
-        {sorted.length === 0 && (
+        {loading && exercises.length === 0 && (
+          <div style={{ padding: 40, textAlign: 'center' }}>
+            <div style={{ fontFamily: "'Anton', sans-serif", fontSize: 16, textTransform: 'uppercase', color: t.sub }}>Loading...</div>
+          </div>
+        )}
+
+        {!loading && exercises.length === 0 && (
           <div className="empty-state">
             <h3>No drills found</h3>
             <p>Try another search or tag</p>
@@ -112,16 +164,25 @@ export default function ExercisesPage({ toast }: { toast?: { show: (m: string) =
             }}>Clear filters</button>
           </div>
         )}
+
+        <div ref={sentinelRef} style={{ height: 1 }} />
+        {loading && exercises.length > 0 && (
+          <div style={{ padding: 20, textAlign: 'center' }}>
+            <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.12em', textTransform: 'uppercase', color: t.sub }}>Loading more...</span>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-function DrillRow({ exercise: ex, index, expanded, onToggle, isOwn, onEdit, onDelete }: {
-  exercise: Exercise; index: number; expanded: boolean; onToggle: () => void;
+function DrillRow({ exercise: ex, expandedExercise, expandLoading, index, expanded, onToggle, isOwn, onEdit, onDelete }: {
+  exercise: Exercise; expandedExercise: Exercise | null; expandLoading: boolean;
+  index: number; expanded: boolean; onToggle: () => void;
   isOwn: boolean; onEdit: () => void; onDelete: () => void;
 }) {
   const { t } = useTheme();
+  const detail = expandedExercise ?? ex;
 
   return (
     <div style={{ borderTop: `1px solid ${t.line}` }}>
@@ -152,67 +213,74 @@ function DrillRow({ exercise: ex, index, expanded, onToggle, isOwn, onEdit, onDe
 
       {expanded && (
         <div style={{ padding: '0 22px 20px' }}>
-          <div style={{
-            height: 150, border: `1px dashed ${t.line}`,
-            background: `repeating-linear-gradient(45deg, ${t.chip} 0 11px, transparent 11px 22px)`,
-            borderRadius: 3, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 18,
-          }}>
-            <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.16em', textTransform: 'uppercase', color: t.sub }}>
-              {ex.mediaType === 'video' ? 'Exercise demo video' : 'Exercise photo'}
+          {expandLoading ? (
+            <div style={{ padding: 20, textAlign: 'center' }}>
+              <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.12em', textTransform: 'uppercase', color: t.sub }}>Loading details...</span>
             </div>
-            <div style={{ fontFamily: 'ui-monospace, monospace', fontSize: 11, color: t.sub, opacity: 0.7 }}>drop image / video</div>
-          </div>
-
-          <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.2em', textTransform: 'uppercase', color: t.accent, marginBottom: 12 }}>Execution</div>
-          {ex.steps.map((step, i) => (
-            <div key={step.id} style={{ display: 'flex', gap: 13, marginBottom: 12 }}>
+          ) : (
+            <>
               <div style={{
-                width: 24, height: 24, flexShrink: 0, border: `1px solid ${t.line}`, color: t.ink,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontFamily: "'Anton', sans-serif", fontSize: 13, borderRadius: 2,
-              }}>{i + 1}</div>
-              <div style={{ fontSize: 13.5, fontWeight: 500, lineHeight: 1.5, color: t.ink, opacity: 0.9 }}>{step.description}</div>
-            </div>
-          ))}
+                height: 150, border: `1px dashed ${t.line}`,
+                background: `repeating-linear-gradient(45deg, ${t.chip} 0 11px, transparent 11px 22px)`,
+                borderRadius: 3, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 18,
+              }}>
+                <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.16em', textTransform: 'uppercase', color: t.sub }}>
+                  {detail.mediaType === 'video' ? 'Exercise demo video' : 'Exercise photo'}
+                </div>
+                <div style={{ fontFamily: 'ui-monospace, monospace', fontSize: 11, color: t.sub, opacity: 0.7 }}>drop image / video</div>
+              </div>
 
-          {ex.tips.length > 0 && (
-            <>
-              <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.2em', textTransform: 'uppercase', color: t.accent, margin: '18px 0 10px' }}>Cues</div>
-              {ex.tips.map((tip, i) => (
-                <div key={i} style={{ display: 'flex', gap: 11, marginBottom: 8, alignItems: 'flex-start' }}>
-                  <span style={{ width: 8, height: 8, background: t.accent, marginTop: 6, flexShrink: 0 }} />
-                  <div style={{ fontSize: 13, fontWeight: 500, lineHeight: 1.45, color: t.ink, opacity: 0.88 }}>{tip}</div>
+              <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.2em', textTransform: 'uppercase', color: t.accent, marginBottom: 12 }}>Execution</div>
+              {detail.steps.map((step, i) => (
+                <div key={step.id} style={{ display: 'flex', gap: 13, marginBottom: 12 }}>
+                  <div style={{
+                    width: 24, height: 24, flexShrink: 0, border: `1px solid ${t.line}`, color: t.ink,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontFamily: "'Anton', sans-serif", fontSize: 13, borderRadius: 2,
+                  }}>{i + 1}</div>
+                  <div style={{ fontSize: 13.5, fontWeight: 500, lineHeight: 1.5, color: t.ink, opacity: 0.9 }}>{step.description}</div>
                 </div>
               ))}
-            </>
-          )}
 
-          {ex.donts.length > 0 && (
-            <>
-              <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.2em', textTransform: 'uppercase', color: t.danger, margin: '18px 0 10px' }}>No-Go</div>
-              {ex.donts.map((d, i) => (
-                <div key={i} style={{ display: 'flex', gap: 11, marginBottom: 8, alignItems: 'flex-start' }}>
-                  <span style={{ width: 8, height: 8, background: t.danger, marginTop: 6, flexShrink: 0 }} />
-                  <div style={{ fontSize: 13, fontWeight: 500, lineHeight: 1.45, color: t.ink, opacity: 0.88 }}>{d}</div>
+              {detail.tips.length > 0 && (
+                <>
+                  <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.2em', textTransform: 'uppercase', color: t.accent, margin: '18px 0 10px' }}>Cues</div>
+                  {detail.tips.map((tip, i) => (
+                    <div key={i} style={{ display: 'flex', gap: 11, marginBottom: 8, alignItems: 'flex-start' }}>
+                      <span style={{ width: 8, height: 8, background: t.accent, marginTop: 6, flexShrink: 0 }} />
+                      <div style={{ fontSize: 13, fontWeight: 500, lineHeight: 1.45, color: t.ink, opacity: 0.88 }}>{tip}</div>
+                    </div>
+                  ))}
+                </>
+              )}
+
+              {detail.donts.length > 0 && (
+                <>
+                  <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.2em', textTransform: 'uppercase', color: t.danger, margin: '18px 0 10px' }}>No-Go</div>
+                  {detail.donts.map((d, i) => (
+                    <div key={i} style={{ display: 'flex', gap: 11, marginBottom: 8, alignItems: 'flex-start' }}>
+                      <span style={{ width: 8, height: 8, background: t.danger, marginTop: 6, flexShrink: 0 }} />
+                      <div style={{ fontSize: 13, fontWeight: 500, lineHeight: 1.45, color: t.ink, opacity: 0.88 }}>{d}</div>
+                    </div>
+                  ))}
+                </>
+              )}
+
+              {isOwn && (
+                <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
+                  <button onClick={onEdit} style={{
+                    flex: 1, padding: '12px 0', borderRadius: 3, fontSize: 10, fontWeight: 800,
+                    letterSpacing: '.12em', textTransform: 'uppercase', cursor: 'pointer',
+                    background: t.accent, color: t.onAccent, border: 'none',
+                  }}>Edit</button>
+                  <button onClick={onDelete} style={{
+                    padding: '12px 18px', borderRadius: 3, fontSize: 10, fontWeight: 800,
+                    letterSpacing: '.12em', textTransform: 'uppercase', cursor: 'pointer',
+                    background: 'transparent', color: t.danger, border: `1px solid ${t.danger}`,
+                  }}>Delete</button>
                 </div>
-              ))}
+              )}
             </>
-          )}
-
-          {/* Edit & Delete buttons for own drills */}
-          {isOwn && (
-            <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
-              <button onClick={onEdit} style={{
-                flex: 1, padding: '12px 0', borderRadius: 3, fontSize: 10, fontWeight: 800,
-                letterSpacing: '.12em', textTransform: 'uppercase', cursor: 'pointer',
-                background: t.accent, color: t.onAccent, border: 'none',
-              }}>Edit</button>
-              <button onClick={onDelete} style={{
-                padding: '12px 18px', borderRadius: 3, fontSize: 10, fontWeight: 800,
-                letterSpacing: '.12em', textTransform: 'uppercase', cursor: 'pointer',
-                background: 'transparent', color: t.danger, border: `1px solid ${t.danger}`,
-              }}>Delete</button>
-            </div>
           )}
         </div>
       )}

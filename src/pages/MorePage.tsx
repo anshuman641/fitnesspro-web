@@ -1,6 +1,5 @@
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
-import { useAuth } from '../context/AuthContext';
 import { useProfile } from '../context/ProfileContext';
 
 const ROADMAP = [
@@ -18,7 +17,6 @@ const NAV_ITEMS = [
 
 export default function SquadPage() {
   const { t } = useTheme();
-  const { signOut } = useAuth();
   const navigate = useNavigate();
   const { level, xp, stats } = useProfile();
 
@@ -88,12 +86,6 @@ export default function SquadPage() {
         <div style={{ borderTop: `1px solid ${t.line}` }} />
       </div>
 
-      <button onClick={signOut} style={{
-        marginTop: 28, padding: '14px 32px', borderRadius: 3,
-        border: `1px solid ${t.line}`, background: 'transparent',
-        color: t.sub, fontWeight: 800, fontSize: 10, letterSpacing: '.14em',
-        textTransform: 'uppercase', cursor: 'pointer',
-      }}>Sign Out</button>
     </div>
   );
 }

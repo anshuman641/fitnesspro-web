@@ -168,8 +168,7 @@ function AppShell() {
 
   if (!user) return <LoginPage />;
 
-  const isFullScreen = location.pathname.startsWith('/workouts/play/') ||
-    location.pathname === '/workouts/new';
+  const isFullScreen = location.pathname.startsWith('/workouts/play/');
 
   if (location.pathname.startsWith('/workouts/play/')) {
     return (
@@ -204,6 +203,7 @@ function AppShell() {
                   <Route path="/exercises/edit/:exerciseId" element={<AddExercisePage toast={toast} />} />
                   <Route path="/workouts" element={<WorkoutsPage />} />
                   <Route path="/workouts/new" element={<WorkoutBuilderPage toast={toast} />} />
+                  <Route path="/workouts/edit/:workoutId" element={<WorkoutBuilderPage toast={toast} />} />
                   <Route path="/squad" element={<SquadPage />} />
                   <Route path="/profile" element={<ProfilePage />} />
                   <Route path="/achievements" element={<AchievementsPage />} />

@@ -1,9 +1,9 @@
-import { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import { useExercises } from '../context/ExerciseContext';
 import { useWorkouts } from '../context/WorkoutContext';
-import type { WorkoutItem, WorkoutMode, RepsSet, DurationSet } from '../types';
+import type { Exercise, WorkoutItem, WorkoutMode, RepsSet, DurationSet } from '../types';
 
 interface BuilderItem extends WorkoutItem {
   uid: string;
@@ -14,10 +14,11 @@ const uid = () => 'b' + (++uidCounter) + '_' + Date.now();
 
 export default function WorkoutBuilderPage({ toast }: { toast?: { show: (m: string) => void } }) {
   const { t } = useTheme();
-  const { exercises, publicExercises, allTags } = useExercises();
-  const { saveWorkout } = useWorkouts();
+  const { searchExercises, fetchExercisesByIds, allTags, loadTags } = useExercises();
+  const { fetchWorkoutById, saveWorkout, updateWorkout } = useWorkouts();
   const navigate = useNavigate();
-  const allEx = useMemo(() => [...exercises, ...publicExercises], [exercises, publicExercises]);
+  const { workoutId } = useParams<{ workoutId?: string }>();
+  const isEdit = !!workoutId;
 
   const [wkName, setWkName] = useState('');
   const [search, setSearch] = useState('');
@@ -27,14 +28,81 @@ export default function WorkoutBuilderPage({ toast }: { toast?: { show: (m: stri
   const [restBetween, setRestBetween] = useState(15);
   const [saving, setSaving] = useState(false);
 
-  const candidates = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return allEx.filter(ex => {
-      const mq = !q || ex.title.toLowerCase().includes(q) || ex.tags.some(tag => tag.toLowerCase().includes(q));
-      const mt = selectedTags.length === 0 || selectedTags.some(tag => ex.tags.includes(tag));
-      return mq && mt;
+  const [candidates, setCandidates] = useState<Exercise[]>([]);
+  const [exHasMore, setExHasMore] = useState(false);
+  const [exPage, setExPage] = useState(0);
+  const [exLoading, setExLoading] = useState(false);
+  const [exMap, setExMap] = useState<Map<string, Exercise>>(new Map());
+
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const fetchIdRef = useRef(0);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const editLoaded = useRef(false);
+
+  useEffect(() => { loadTags(); }, [loadTags]);
+
+  // Load workout for edit mode
+  useEffect(() => {
+    if (!isEdit || !workoutId || editLoaded.current) return;
+    editLoaded.current = true;
+    (async () => {
+      const w = await fetchWorkoutById(workoutId);
+      if (!w) return;
+      setWkName(w.name);
+      setIsPublic(w.isPublic);
+      setRestBetween(w.restBetween ?? 15);
+      setItems(w.items.map(it => ({ ...it, uid: uid() })));
+      const exIds = [...new Set(w.items.map(it => it.exerciseId))];
+      if (exIds.length > 0) {
+        const exercises = await fetchExercisesByIds(exIds);
+        setExMap(new Map(exercises.map(ex => [ex.id, ex])));
+      }
+    })();
+  }, [isEdit, workoutId, fetchWorkoutById, fetchExercisesByIds]);
+
+  const fetchExPage = useCallback(async (pageNum: number, append: boolean) => {
+    const id = ++fetchIdRef.current;
+    setExLoading(true);
+    const result = await searchExercises(
+      { search: search.trim() || undefined, tags: selectedTags.length > 0 ? selectedTags : undefined },
+      { page: pageNum },
+    );
+    if (id !== fetchIdRef.current) return;
+    const newCandidates = append ? [...candidates, ...result.data] : result.data;
+    setCandidates(newCandidates);
+    setExHasMore(result.hasMore);
+    setExLoading(false);
+    setExMap(prev => {
+      const next = new Map(prev);
+      for (const ex of result.data) next.set(ex.id, ex);
+      return next;
     });
-  }, [allEx, search, selectedTags]);
+  }, [searchExercises, search, selectedTags, candidates]);
+
+  // Debounced search
+  useEffect(() => {
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setExPage(0);
+      fetchExPage(0, false);
+    }, 300);
+    return () => clearTimeout(debounceRef.current);
+  }, [search, selectedTags, fetchExPage]);
+
+  // Infinite scroll for exercise candidates
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+    const observer = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && exHasMore && !exLoading) {
+        const nextPage = exPage + 1;
+        setExPage(nextPage);
+        fetchExPage(nextPage, true);
+      }
+    }, { threshold: 0.1 });
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [exHasMore, exLoading, exPage, fetchExPage]);
 
   const toggleTag = (tag: string) =>
     setSelectedTags(prev => prev.includes(tag) ? prev.filter(x => x !== tag) : [...prev, tag]);
@@ -65,14 +133,20 @@ export default function WorkoutBuilderPage({ toast }: { toast?: { show: (m: stri
     if (!wkName.trim()) { toast?.show('Name your session'); return; }
     if (!items.length) { toast?.show('Add at least one drill'); return; }
     setSaving(true);
-    await saveWorkout({
+    const payload = {
       name: wkName.trim(),
       items: items.map(({ exerciseId, mode, sets }) => ({ exerciseId, mode, sets })),
       isPublic,
       restBetween,
-    });
+    };
+    if (isEdit && workoutId) {
+      await updateWorkout({ ...payload, id: workoutId });
+      toast?.show('Session updated');
+    } else {
+      await saveWorkout(payload);
+      toast?.show('Session saved');
+    }
     setSaving(false);
-    toast?.show('Session saved');
     navigate('/workouts');
   };
 
@@ -83,7 +157,7 @@ export default function WorkoutBuilderPage({ toast }: { toast?: { show: (m: stri
         <button className="btn-back" onClick={() => navigate('/workouts')}>
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M13 4l-6 6 6 6" /></svg>
         </button>
-        <h1 style={{ flex: 1, fontFamily: "'Anton', sans-serif", fontSize: 20, letterSpacing: '.04em', textTransform: 'uppercase', color: t.ink }}>Build Session</h1>
+        <h1 style={{ flex: 1, fontFamily: "'Anton', sans-serif", fontSize: 20, letterSpacing: '.04em', textTransform: 'uppercase', color: t.ink }}>{isEdit ? 'Edit Session' : 'Build Session'}</h1>
       </div>
 
       {/* Form */}
@@ -132,20 +206,30 @@ export default function WorkoutBuilderPage({ toast }: { toast?: { show: (m: stri
           );
         })}
 
+        {exLoading && (
+          <div style={{ padding: 16, textAlign: 'center' }}>
+            <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.12em', textTransform: 'uppercase', color: t.sub }}>
+              {candidates.length === 0 ? 'Loading...' : 'Loading more...'}
+            </span>
+          </div>
+        )}
+
+        <div ref={sentinelRef} style={{ height: 1 }} />
+
         {/* Selected items */}
         {items.length > 0 && (
           <div className="section-label" style={{ marginTop: 22 }}>Your Session ({items.length})</div>
         )}
 
         {items.map(it => {
-          const ex = allEx.find(e => e.id === it.exerciseId);
-          if (!ex) return null;
+          const ex = exMap.get(it.exerciseId);
+          const title = ex?.title ?? '...';
           const isReps = it.mode === 'reps';
           return (
             <div key={it.uid} style={{ background: t.card, border: `1px solid ${t.line}`, borderRadius: 3, padding: 14, marginBottom: 10 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 11, marginBottom: 12 }}>
-                <div className="monogram monogram-sm">{ex.title[0]}</div>
-                <span style={{ flex: 1, fontFamily: "'Anton', sans-serif", fontSize: 16, textTransform: 'uppercase', color: t.ink }}>{ex.title}</span>
+                <div className="monogram monogram-sm">{title[0]}</div>
+                <span style={{ flex: 1, fontFamily: "'Anton', sans-serif", fontSize: 16, textTransform: 'uppercase', color: t.ink }}>{title}</span>
                 <button onClick={() => toggleExercise(it.exerciseId)} style={{
                   width: 30, height: 30, borderRadius: 3, border: `1px solid ${t.line}`,
                   background: 'transparent', color: t.sub, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
