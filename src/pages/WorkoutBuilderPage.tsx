@@ -79,7 +79,7 @@ export default function WorkoutBuilderPage({ toast }: { toast?: { show: (m: stri
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: t.bg }}>
       {/* Top bar */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '52px 18px 14px', borderBottom: `1px solid ${t.line}`, flexShrink: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '24px 32px 14px', borderBottom: `1px solid ${t.line}`, flexShrink: 0 }}>
         <button className="btn-back" onClick={() => navigate('/workouts')}>
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M13 4l-6 6 6 6" /></svg>
         </button>
@@ -87,7 +87,8 @@ export default function WorkoutBuilderPage({ toast }: { toast?: { show: (m: stri
       </div>
 
       {/* Form */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '18px 22px 28px', scrollbarWidth: 'none' }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '24px 32px 40px' }}>
+        <div className="form-panel">
         <input className="input" value={wkName} onChange={e => setWkName(e.target.value)} placeholder="Session name — e.g. Morning Reset" />
 
         <div className="search-box" style={{ marginTop: 14 }}>
@@ -243,6 +244,7 @@ export default function WorkoutBuilderPage({ toast }: { toast?: { show: (m: stri
             {saving ? 'Saving...' : `Save session · ${items.length} ${items.length === 1 ? 'drill' : 'drills'}`}
           </button>
         )}
+        </div>
       </div>
     </div>
   );

@@ -31,19 +31,17 @@ export default function WorkoutsPage() {
   };
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ padding: '54px 22px 0' }}>
-        <div className="page-eyebrow">// Deploy</div>
-        <div className="page-header">
-          <h1 className="page-title">Sessions</h1>
-          <button className="btn-accent" onClick={() => navigate('/workouts/new')}>
-            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round"><path d="M11 5v12M5 11h12" /></svg>
-          </button>
-        </div>
-        <div className="page-count">{allWorkouts.length} {allWorkouts.length === 1 ? 'session' : 'sessions'}</div>
+    <div className="page">
+      <div className="page-eyebrow">// Deploy</div>
+      <div className="page-header">
+        <h1 className="page-title">Sessions</h1>
+        <button className="btn-accent" onClick={() => navigate('/workouts/new')}>
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round"><path d="M11 5v12M5 11h12" /></svg>
+        </button>
       </div>
+      <div className="page-count">{allWorkouts.length} {allWorkouts.length === 1 ? 'session' : 'sessions'}</div>
 
-      <div style={{ flex: 1, overflowY: 'auto', padding: '14px 22px 26px', scrollbarWidth: 'none' }}>
+      <div className="card-grid" style={{ marginTop: 18 }}>
         {allWorkouts.map((w, wi) => {
           const totalSecs = w.items.reduce((a, it) => a + exTime(it), 0);
           const mins = Math.max(1, Math.round(totalSecs / 60));
@@ -108,6 +106,7 @@ export default function WorkoutsPage() {
         {allWorkouts.length === 0 && (
           <div style={{
             border: `1px dashed ${t.line}`, borderRadius: 3, padding: 40, textAlign: 'center',
+            gridColumn: '1 / -1',
           }}>
             <h3 style={{ fontFamily: "'Anton', sans-serif", fontSize: 22, textTransform: 'uppercase', color: t.ink }}>No sessions yet</h3>
             <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: t.sub, margin: '10px 0 18px' }}>
