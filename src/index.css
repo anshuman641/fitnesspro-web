@@ -488,11 +488,156 @@ a { text-decoration: none; color: inherit; }
   flex-shrink: 0;
 }
 
+/* ── New Session Button ── */
+.btn-new-session {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-family: 'Archivo', sans-serif;
+  font-weight: 800;
+  font-size: 11px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  padding: 14px 24px;
+  border-radius: 3px;
+  transition: opacity .15s;
+  white-space: nowrap;
+}
+
+.btn-new-session:hover { opacity: 0.9; }
+
+/* ── Session Cards ── */
+.session-card {
+  border: 1px solid var(--accent);
+  border-radius: 3px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+.session-card-body {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding-bottom: 20px;
+}
+
+.session-card-number {
+  font-family: 'Anton', sans-serif;
+  font-size: 38px;
+  line-height: 1;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.session-card-info {
+  flex: 1;
+  min-width: 0;
+  padding-top: 4px;
+}
+
+.session-card-name {
+  font-family: 'Anton', sans-serif;
+  font-size: 22px;
+  line-height: 1.1;
+  letter-spacing: .02em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.session-card-meta {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--sub);
+  margin-top: 6px;
+}
+
+.session-card-divider {
+  height: 1px;
+  background: var(--line);
+}
+
+.session-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 16px;
+}
+
+.btn-start {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-family: 'Archivo', sans-serif;
+  font-weight: 800;
+  font-size: 11px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  padding: 14px 18px;
+  border-radius: 3px;
+  transition: opacity .15s;
+}
+
+.btn-start:hover { opacity: 0.9; }
+
+.btn-card-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 3px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--sub);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: border-color .15s;
+}
+
+.btn-card-icon:hover {
+  border-color: var(--sub);
+}
+
+/* ── Build a Session Placeholder ── */
+.session-card-placeholder {
+  border: 1px dashed var(--line);
+  border-radius: 3px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  min-height: 200px;
+  cursor: pointer;
+  transition: border-color .15s;
+}
+
+.session-card-placeholder:hover {
+  border-color: var(--accent);
+}
+
+.session-card-placeholder-label {
+  font-family: 'Archivo', sans-serif;
+  font-weight: 800;
+  font-size: 11px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--sub);
+}
+
 /* ── Grid Layouts ── */
 .card-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
 }
 
 .stat-grid {
