@@ -7,6 +7,7 @@ const THEME_META: { key: ThemeName; name: string; desc: string }[] = [
   { key: 'kelly', name: 'Kelly', desc: 'Green-tinted dark with kelly green accent.' },
   { key: 'navy', name: 'Navy', desc: 'Deep navy with royal blue accent.' },
   { key: 'valentino', name: 'Valentino', desc: 'Dark rose with Valentino pink accent.' },
+  { key: 'valentino-pp', name: 'Valentino PP', desc: 'Deep purple-black with electric violet accent.' },
 ];
 
 export default function AppearancePage() {
