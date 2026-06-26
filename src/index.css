@@ -5,19 +5,19 @@
 }
 
 :root {
-  --bg: #0C0D0F;
-  --surface: #15171B;
-  --canvas: #08090A;
-  --card: #121316;
-  --chip: #191B1F;
-  --ink: #F4F1EA;
-  --sub: #8A8F98;
-  --line: #2A2D33;
-  --accent: #2E6BFF;
-  --accent-soft: rgba(46,107,255,0.16);
+  --bg: #10081A;
+  --surface: #1A1028;
+  --canvas: #080410;
+  --card: #150D22;
+  --chip: #1F1430;
+  --ink: #F0EBF5;
+  --sub: #9488A4;
+  --line: #302448;
+  --accent: #9B30FF;
+  --accent-soft: rgba(155,48,255,0.20);
   --on-accent: #FFFFFF;
-  --danger: #FF5A47;
-  --shadow: 0 16px 40px rgba(0,0,0,.6);
+  --danger: #FF5A72;
+  --shadow: 0 16px 40px rgba(12,4,22,.70);
   --sidebar-w: 240px;
 }
 
