@@ -4,7 +4,7 @@ import { useTheme, type ThemeName } from '../context/ThemeContext';
 import { useProfile } from '../context/ProfileContext';
 import { useAuth } from '../context/AuthContext';
 
-const THEME_LIST: ThemeName[] = ['dark', 'light', 'kelly', 'navy'];
+const THEME_LIST: ThemeName[] = ['dark', 'light', 'kelly', 'navy', 'valentino', 'valentino-pp'];
 
 export default function ProfilePage() {
   const { t, theme, setTheme, themeDots } = useTheme();
