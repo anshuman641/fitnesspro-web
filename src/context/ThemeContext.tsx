@@ -89,7 +89,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<ThemeName>(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored === 'dark' || stored === 'light' || stored === 'kelly' || stored === 'navy' || stored === 'valentino' || stored === 'valentino-pp') return stored;
-    return 'dark';
+    return 'valentino-pp';
   });
 
   const setTheme = (name: ThemeName) => {
