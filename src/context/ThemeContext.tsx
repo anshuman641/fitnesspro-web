@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-export type ThemeName = 'dark' | 'light' | 'kelly' | 'navy';
+export type ThemeName = 'dark' | 'light' | 'kelly' | 'navy' | 'valentino';
 
 export interface ThemeTokens {
   bg: string;
@@ -49,6 +49,13 @@ const THEMES: Record<ThemeName, ThemeTokens> = {
     softA: 0.20, accentSoft: 'rgba(60,93,196,0.20)',
     shadow: '0 16px 40px rgba(4,8,30,.65)', dark: true,
   },
+  valentino: {
+    bg: '#120A0D', surface: '#1C1215', canvas: '#0A0608', card: '#171012',
+    chip: '#221619', ink: '#F5EDF0', sub: '#9C8A90', line: '#352830',
+    accent: '#BE3455', onAccent: '#FFFFFF', danger: '#FF5A47',
+    softA: 0.18, accentSoft: 'rgba(190,52,85,0.18)',
+    shadow: '0 16px 40px rgba(18,4,8,.65)', dark: true,
+  },
 };
 
 const THEME_DOTS: Record<ThemeName, string> = {
@@ -56,6 +63,7 @@ const THEME_DOTS: Record<ThemeName, string> = {
   light: '#FFFFFF',
   kelly: '#1FA24A',
   navy: '#3C5DC4',
+  valentino: '#BE3455',
 };
 
 interface ThemeContextType {
@@ -72,7 +80,7 @@ const STORAGE_KEY = 'fp_theme';
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<ThemeName>(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored === 'dark' || stored === 'light' || stored === 'kelly' || stored === 'navy') return stored;
+    if (stored === 'dark' || stored === 'light' || stored === 'kelly' || stored === 'navy' || stored === 'valentino') return stored;
     return 'dark';
   });
 
