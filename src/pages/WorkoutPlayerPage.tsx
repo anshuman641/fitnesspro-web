@@ -4,7 +4,6 @@ import { useWorkouts } from '../context/WorkoutContext';
 import { useExercises } from '../context/ExerciseContext';
 import { useActiveSession } from '../context/ActiveSessionContext';
 import { useProfile } from '../context/ProfileContext';
-import { useWorkoutAudio } from '../hooks/useWorkoutAudio';
 import type { Exercise, WorkoutItem, WorkoutPlan, DurationSet } from '../types';
 
 const RING_SIZE = 240;
@@ -37,8 +36,6 @@ export default function WorkoutPlayerPage() {
 
   const { setActive, confirmLeave } = useActiveSession();
   const { recordWorkoutCompletion } = useProfile();
-  const { playWork, playRest, stopAll } = useWorkoutAudio();
-
   const [workout, setWorkout] = useState<WorkoutPlan | null>(null);
   const [exMap, setExMap] = useState<Map<string, Exercise>>(new Map());
   const [dataLoading, setDataLoading] = useState(true);
@@ -83,18 +80,9 @@ export default function WorkoutPlayerPage() {
 
   useEffect(() => {
     setActive(true);
-    return () => { setActive(false); stopAll(); };
-  }, [setActive, stopAll]);
+    return () => { setActive(false); };
+  }, [setActive]);
 
-  useEffect(() => {
-    if (done || paused) return;
-    if (phase === 'work') playWork();
-    else playRest();
-  }, [phase, done, paused, playWork, playRest]);
-
-  useEffect(() => {
-    if (paused) stopAll();
-  }, [paused, stopAll]);
 
   const startPhase = useCallback((i: number, p: Phase) => {
     const dur = p === 'rest' ? REST_DEFAULT : (items[i] ? exTime(items[i]) : 30);
@@ -135,11 +123,10 @@ export default function WorkoutPlayerPage() {
   useEffect(() => {
     if (done && !completionRecorded.current) {
       completionRecorded.current = true;
-      stopAll();
       setActive(false);
       recordWorkoutCompletion(totalElapsed);
     }
-  }, [done, totalElapsed, stopAll, setActive, recordWorkoutCompletion]);
+  }, [done, totalElapsed, setActive, recordWorkoutCompletion]);
 
   if (dataLoading) {
     return (
@@ -183,7 +170,6 @@ export default function WorkoutPlayerPage() {
 
   const handleClose = () => {
     confirmLeave(() => {
-      stopAll();
       navigate('/workouts');
     });
   };
