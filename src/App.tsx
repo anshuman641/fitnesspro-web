@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Routes, Route, NavLink, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { ThemeProvider, useTheme, type ThemeName } from './context/ThemeContext';
+import logoPng from './assets/logo.png';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ExerciseProvider } from './context/ExerciseContext';
 import { WorkoutProvider } from './context/WorkoutContext';
@@ -110,8 +111,13 @@ function Sidebar() {
   return (
     <aside className="sidebar">
       <div className="sidebar-brand">
-        <h1>FitnessPro</h1>
-        <div className="brand-sub">Boutique Strength Club</div>
+        <div className="brand-logo-row">
+          <img src={logoPng} alt="Logo" className="brand-logo" />
+          <div>
+            <h1>Foyard</h1>
+            <div className="brand-sub">Foy Farm + Fitness</div>
+          </div>
+        </div>
       </div>
       <nav className="sidebar-nav">
         <NavLink to="/exercises" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}>
