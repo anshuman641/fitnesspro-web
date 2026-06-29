@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import logoPng from '../assets/logo.png';
 
 type AuthMode = 'select' | 'email' | 'phone' | 'otp-verify';
 
@@ -158,14 +159,9 @@ export default function LoginPage() {
   return (
     <div style={containerStyle}>
       <div style={formStyle}>
-        <div style={{
-          width: 46, height: 46, borderRadius: 3, background: t.accent,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 18,
-        }}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round"><path d="M4 17l4-8 4 4 4-6 4 10" /></svg>
-        </div>
-        <h1 style={{ fontFamily: "'Anton', sans-serif", fontSize: 36, textTransform: 'uppercase', color: t.ink, letterSpacing: '.02em' }}>FitnessPro</h1>
-        <p style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.22em', textTransform: 'uppercase', color: t.sub, marginTop: 4, marginBottom: 48 }}>Boutique Strength Club</p>
+        <img src={logoPng} alt="Logo" style={{ width: 80, height: 'auto', marginBottom: 18, filter: 'invert(1) brightness(2)' }} />
+        <h1 style={{ fontFamily: "'Anton', sans-serif", fontSize: 36, textTransform: 'uppercase', color: t.ink, letterSpacing: '.02em' }}>Foyard</h1>
+        <p style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.22em', textTransform: 'uppercase', color: t.sub, marginTop: 4, marginBottom: 48 }}>Foy Farm + Fitness</p>
 
         <button onClick={signInWithGoogle} style={{ ...methodBtnStyle, background: '#fff', border: 'none' }}>
           <span style={{ fontSize: 18, fontWeight: 'bold', color: '#4285F4' }}>G</span>
