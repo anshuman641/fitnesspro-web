@@ -219,16 +219,42 @@ function DrillRow({ exercise: ex, expandedExercise, expandLoading, index, expand
             </div>
           ) : (
             <>
-              <div style={{
-                height: 150, border: `1px dashed ${t.line}`,
-                background: `repeating-linear-gradient(45deg, ${t.chip} 0 11px, transparent 11px 22px)`,
-                borderRadius: 3, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 18,
-              }}>
-                <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.16em', textTransform: 'uppercase', color: t.sub }}>
-                  {detail.mediaType === 'video' ? 'Exercise demo video' : 'Exercise photo'}
+              {detail.mediaUri ? (
+                detail.mediaType === 'video' ? (
+                  <video
+                    src={detail.mediaUri}
+                    controls
+                    preload="metadata"
+                    playsInline
+                    style={{
+                      width: '100%', height: 220, objectFit: 'cover',
+                      border: `1px solid ${t.line}`, borderRadius: 3, marginBottom: 18,
+                      background: t.chip, display: 'block',
+                    }}
+                  />
+                ) : (
+                  <img
+                    src={detail.mediaUri}
+                    alt={detail.title}
+                    style={{
+                      width: '100%', height: 220, objectFit: 'cover',
+                      border: `1px solid ${t.line}`, borderRadius: 3, marginBottom: 18,
+                      background: t.chip, display: 'block',
+                    }}
+                  />
+                )
+              ) : (
+                <div style={{
+                  height: 150, border: `1px dashed ${t.line}`,
+                  background: `repeating-linear-gradient(45deg, ${t.chip} 0 11px, transparent 11px 22px)`,
+                  borderRadius: 3, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 18,
+                }}>
+                  <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.16em', textTransform: 'uppercase', color: t.sub }}>
+                    No media
+                  </div>
+                  <div style={{ fontFamily: 'ui-monospace, monospace', fontSize: 11, color: t.sub, opacity: 0.7 }}>drop image / video</div>
                 </div>
-                <div style={{ fontFamily: 'ui-monospace, monospace', fontSize: 11, color: t.sub, opacity: 0.7 }}>drop image / video</div>
-              </div>
+              )}
 
               <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.2em', textTransform: 'uppercase', color: t.accent, marginBottom: 12 }}>Execution</div>
               {detail.steps.map((step, i) => (

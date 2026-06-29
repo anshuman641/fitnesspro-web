@@ -9,10 +9,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.106.0",
     "@supabase/supabase-js": "^2.108.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "react-router-dom": "^7.6.2"
+    "react-router-dom": "^7.6.2",
+    "ws": "^8.21.0"
   },
   "devDependencies": {
     "@types/react": "^19.1.0",
